@@ -1,0 +1,127 @@
+name: ORION APK bauen
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Projekt holen
+        uses: actions/checkout@v4
+
+      - name: Java einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Projektdateien erzeugen
+        run: |
+          cat > package.json << 'ENDE'
+          {
+            "name": "orion-assistant",
+            "version": "1.0.0",
+            "private": true,
+            "dependencies": {
+              "@capacitor/android": "^6.2.0",
+              "@capacitor/cli": "^6.2.0",
+              "@capacitor/core": "^6.2.0",
+              "@capacitor-community/speech-recognition": "^6.0.1",
+              "@capacitor-community/text-to-speech": "^5.0.0"
+            }
+          }
+          ENDE
+
+          cat > capacitor.config.json << 'ENDE'
+          {
+            "appId": "com.barys.orion",
+            "appName": "ORION",
+            "webDir": "www",
+            "android": {
+              "allowMixedContent": true,
+              "webContentsDebuggingEnabled": true
+            },
+            "plugins": {
+              "SpeechRecognition": { "language": "de-DE" }
+            }
+          }
+          ENDE
+
+          echo "Projektdateien angelegt."
+          ls -la
+          echo "--- Inhalt von www ---"
+          ls -la www || echo "FEHLER: Der Ordner www fehlt. Lade www/index.html hoch."
+
+      - name: Pakete installieren
+        run: npm install
+
+      - name: Android-Projekt erzeugen
+        run: npx cap add android
+
+      - name: Web-Dateien uebernehmen
+        run: npx cap sync android
+
+      - name: Berechtigungen eintragen
+        run: |
+          python3 - << 'ENDE'
+          import re, pathlib, sys
+
+          p = pathlib.Path("android/app/src/main/AndroidManifest.xml")
+          if not p.exists():
+              sys.exit("AndroidManifest.xml nicht gefunden")
+
+          xml = p.read_text(encoding="utf-8")
+
+          perms = [
+              "android.permission.INTERNET",
+              "android.permission.RECORD_AUDIO",
+              "android.permission.CAMERA",
+              "android.permission.MODIFY_AUDIO_SETTINGS",
+              "android.permission.ACCESS_NETWORK_STATE",
+              "android.permission.VIBRATE",
+          ]
+          block = "\n".join('    <uses-permission android:name="%s" />' % x for x in perms)
+          block += (
+              '\n    <uses-feature android:name="android.hardware.camera" android:required="false" />'
+              '\n    <uses-feature android:name="android.hardware.microphone" android:required="false" />'
+              '\n    <queries><intent><action android:name="android.speech.RecognitionService" />'
+              '</intent></queries>\n'
+          )
+
+          xml = re.sub(r'\s*<uses-permission[^>]*/>', '', xml)
+          xml = re.sub(r'\s*<uses-feature[^>]*/>', '', xml)
+          xml = xml.replace("</manifest>", block + "</manifest>")
+
+          if "usesCleartextTraffic" not in xml:
+              xml = xml.replace("<application", '<application android:usesCleartextTraffic="true"', 1)
+
+          p.write_text(xml, encoding="utf-8")
+          print("Berechtigungen eingetragen.")
+          ENDE
+
+      - name: APK bauen
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: APK bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: ORION-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Hinweis
+        run: |
+          echo "### APK ist fertig" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Weiter unten auf dieser Seite unter **Artifacts** liegt **ORION-APK**." >> $GITHUB_STEP_SUMMARY
+          echo "Herunterladen, entpacken, app-debug.apk antippen." >> $GITHUB_STEP_SUMMARY
