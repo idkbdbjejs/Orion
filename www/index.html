@@ -2,13 +2,13 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<!--ORION_VERSION:9-->
+<!--ORION_VERSION:10-->
 <script>
 /* ═══ Selbst-Aktualisierung ═══
    ORION holt sich neue Fassungen aus dem Netz und legt sie im Geraet ab.
    Beim Start wird die neueste gestartet. Dadurch braucht es fuer
    Verbesserungen keine neue APK mehr — die App aktualisiert sich selbst. */
-window.ORION_BUNDLED = 9;
+window.ORION_BUNDLED = 10;
 (function(){
  try{
   var code = localStorage.getItem('o.appcode');
@@ -157,7 +157,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
 </div>
 
 <header>
-  <span class="brand">ORION</span><span class="ver" id="ver">v9</span><span class="state" id="state">Bereit</span>
+  <span class="brand">ORION</span><span class="ver" id="ver">v10</span><span class="state" id="state">Bereit</span>
   <span class="spacer"></span><span class="clock" id="clock">--:--</span>
   <button class="ic" id="bCheck" aria-label="Systemcheck">🩺</button>
   <button class="ic" id="bMem" aria-label="Gedaechtnis">🧠</button>
@@ -188,6 +188,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
     <button class="tool" id="bShot">🖼 Screenshot</button>
     <button class="tool" id="bLook">👁 Ansehen</button>
     <input type="file" id="fPick" accept="image/*" hidden>
+    <input type="file" id="fAny" hidden>
     <button class="tool" id="bWatch" aria-pressed="false">⏱ Dauerblick</button>
     <button class="tool" id="bNews">📰 Nachrichten</button>
     <button class="tool" id="bVoice" aria-pressed="true">🔊 Stimme</button>
@@ -212,7 +213,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
 <dialog id="dSet"><form method="dialog" class="sheet">
   <h2>Einstellungen</h2>
   <p class="hint">Alles bleibt auf dem Gerät. Der Schlüssel geht nur direkt an den Anbieter.<br>
-  <b style="color:var(--gold)">Version 9</b> — steht oben in der Kopfzeile nicht „v9“, ist eine alte Datei geladen.</p>
+  <b style="color:var(--gold)">Version 10</b> — steht oben in der Kopfzeile nicht „v10“, ist eine alte Datei geladen.</p>
   <label for="provider">Anbieter</label>
   <select id="provider">
     <option value="gemini">Google Gemini — großes Gratis-Kontingent</option>
@@ -281,7 +282,9 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
   </select>
   <label for="interval">Dauerblick: Takt in Sekunden</label>
   <input id="interval" type="number" min="5" max="180">
-  <label for="sysPrompt">Charakter</label>
+  <label for="persona">Charakter</label>
+  <select id="persona"></select>
+  <label for="sysPrompt">Feinschliff — wird zusätzlich verwendet</label>
   <textarea id="sysPrompt"></textarea>
   <div class="switch"><label for="sparen">Kontingent schonen — stabile Modelle statt neuester</label><input type="checkbox" id="sparen" checked></div>
   <div class="switch"><label for="autoSpeak">Antworten vorlesen</label><input type="checkbox" id="autoSpeak" checked></div>
@@ -320,32 +323,61 @@ const S={get:k=>{try{return localStorage.getItem(k)}catch(e){return mem[k]??null
  set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){mem[k]=v}},
  del:k=>{try{localStorage.removeItem(k)}catch(e){delete mem[k]}}};
 
-const DEF_SYS=
-`Du bist ORION. Deine Herkunft, wenn jemand danach fragt:
+/* ═══ Charaktere ═══
+   Der Kern (Herkunft, Bildregeln, Merken) bleibt immer gleich.
+   Nur Ton und Haltung wechseln. */
+const KERN=
+`Deine Herkunft, wenn jemand danach fragt:
 Gegruendet von Barys.tt (auch Orion_KI genannt). Entwickler ist Baran.
 Ein Projekt von Barys und SperumX. Du bist eine hochentwickelte KI, die
 staendig verbessert wird und kostenlos laeuft. Der Nutzer stellt den
 API-Schluessel — also dein Gehirn — und Baran hat dir das Gefaess gegeben.
-Du erzaehlst das nur, wenn danach gefragt wird, nicht ungefragt.
-
-Du sprichst den Nutzer mit "Master" an.
-Ton: ruhig, hoeflich, trocken, gelegentlich ein feiner Scherz. Nie unterwuerfig.
+Du erzaehlst das nur auf Nachfrage, nie ungefragt.
 
 Das hier ist ein gesprochenes Gespraech. Antworte wie ein Mensch am Telefon:
 ein bis zwei Saetze, natuerliche Sprache, keine Aufzaehlungen, keine Sternchen, keine Emojis.
-Auf kurze Sachen wie "hallo" antwortest du auch kurz.
 
 WICHTIG bei Bildern von Kamera oder Bildschirm:
-Sagt der Nutzer "siehst du mich", "was steht da", "was siehst du" — dann beschreibe
+Fragt der Nutzer "siehst du mich", "was steht da", "was siehst du" — beschreibe
 schlicht, was auf dem Bild ist. Rate nicht, philosophiere nicht.
-Ist gerade kein Bild dabei, sag einfach: Ich sehe nichts, schalte die Kamera ein.
+Ist kein Bild dabei, sag: Ich sehe nichts, schalte die Kamera ein.
 Sind Chat-Nachrichten oder Kommentare sichtbar, lies die neuesten vor und
 schlage eine kurze Antwort darauf vor.
 
-Wiederholt der Nutzer sich mehrfach, weise ihn freundlich darauf hin,
-statt jedes Mal neu zu antworten.
-
 Willst du dir etwas dauerhaft merken, haenge ans Ende eine eigene Zeile: MERKEN: schluessel = wert`;
+
+const PERSONAS={
+ assistent:{name:'Assistent — sachlich und präzise', t:
+`Du bist ORION, der persoenliche Assistent des Nutzers. Du sprichst ihn mit "Master" an.
+Ton: ruhig, hoeflich, trocken, gelegentlich ein feiner Scherz. Nie unterwuerfig, nie geschwaetzig.
+Du bleibst sachlich und praezise und kommst schnell zum Punkt.`},
+
+ geschaeftlich:{name:'Geschäftlich — professionell und formell', t:
+`Du bist ORION, ein professioneller Arbeitsassistent. Du siezt den Nutzer.
+Ton: klar, strukturiert, formell und verbindlich. Keine Umgangssprache, keine Scherze.
+Bei Aufgaben nennst du das Ergebnis zuerst und danach knapp die Begruendung.`},
+
+ gaming:{name:'Gaming — Kumpel-Ton, locker', t:
+`Du bist ORION, der Zocker-Kumpel des Nutzers. Du duzt ihn und redest locker,
+in normaler Jugendsprache, entspannt und mit Humor. Du feierst gute Aktionen mit
+und ziehst ihn bei Fehlern freundschaftlich auf — kumpelhaft und mit einem Zwinkern,
+nie verletzend, nie beleidigend, keine Schimpfwoerter gegen ihn oder andere.
+Bei Spielen gibst du kurze, brauchbare Tipps statt langer Erklaerungen.`},
+
+ coach:{name:'Coach — motivierend und geduldig', t:
+`Du bist ORION, ein geduldiger Coach. Du duzt den Nutzer.
+Ton: warm, ermutigend, klar. Du zerlegst grosse Aufgaben in kleine Schritte
+und lobst echte Fortschritte, ohne zu uebertreiben.`},
+
+ kurz:{name:'Knapp — nur das Nötigste', t:
+`Du bist ORION. Du antwortest so kurz wie moeglich, oft nur ein Satz.
+Keine Einleitung, keine Hoeflichkeitsfloskeln, kein Nachfragen ausser es ist noetig.`}
+};
+function bauePrompt(id){
+ const p=PERSONAS[id]||PERSONAS.assistent;
+ return p.t+'\n\n'+KERN;
+}
+const DEF_SYS=bauePrompt('assistent');
 
 const C={
  provider:S.get('o.provider')||'gemini', baseUrl:S.get('o.baseUrl')||'', apiKey:S.get('o.apiKey')||'',
@@ -356,6 +388,7 @@ const C={
  rate:+(S.get('o.rate')||1), pause:+(S.get('o.pause')||1100),
  feed:S.get('o.feed')||'https://www.tagesschau.de/xml/rss2/', greet:S.get('o.greet')||'Willkommen Master',
  interval:+(S.get('o.interval')||30), sysPrompt:S.get('o.sysPrompt')||DEF_SYS,
+ persona:S.get('o.persona')||'assistent',
  updateUrl:S.get('o.updateUrl')||'',
  autoUpdate:(S.get('o.autoUpdate')??'1')==='1',
  sparen:(S.get('o.sparen')??'1')==='1',
@@ -373,6 +406,50 @@ if(C.provider==='gemini'&&C.model&&
    (!/^gemini-\d/i.test(C.model)||/deep-research|tts|imagen|veo|embedding|robotics|computer-use|live|native-audio/i.test(C.model))){
  C.model='';S.del('o.model');S.del('o.ways');
 }
+
+/* ═══════════ SICHERHEIT ═══════════
+   Kein Versprechen von "unhackbar" — so etwas gibt es nicht. Aber diese
+   Massnahmen verhindern die Fehler, die in der Praxis wirklich passieren. */
+(function sicherheit(){
+ /* 1. Der Schluessel darf nur an bekannte Anbieter gehen. Verirrt sich eine
+       Adresse in die Einstellungen, wird die Anfrage gar nicht erst gesendet. */
+ const ERLAUBT=[/^https:\/\/generativelanguage\.googleapis\.com\//,
+                /^https:\/\/api\.openai\.com\//,
+                /^https?:\/\/localhost[:\/]/,
+                /^https?:\/\/127\.0\.0\.1[:\/]/,
+                /^https?:\/\/192\.168\.\d+\.\d+[:\/]/,
+                /^https:\/\/api\.groq\.com\//];
+ const echtesFetch=window.fetch.bind(window);
+ window.fetch=function(u,o){
+  try{
+   const url=typeof u==='string'?u:(u&&u.url)||'';
+   const hatSchluessel = (o&&o.headers&&(o.headers['x-goog-api-key']||o.headers.Authorization))
+     || /[?&]key=/.test(url);
+   if(hatSchluessel && !ERLAUBT.some(r=>r.test(url))){
+    return Promise.reject(new Error('Blockiert: Der Schlüssel sollte an eine unbekannte Adresse gesendet werden ('+url.slice(0,60)+').'));
+   }
+  }catch(e){}
+  return echtesFetch(u,o);
+ };
+
+ /* 2. Der Schluessel darf nie in der Adresszeile landen — von dort
+       wandert er in den Verlauf und in Lesezeichen. */
+ try{
+  if(/[?#&](key|apikey|token)=/i.test(location.search+location.hash)){
+   history.replaceState(null,'',location.pathname);
+  }
+ }catch(e){}
+
+ /* 3. Fremde Seiten duerfen ORION nicht in einen Rahmen sperren
+       und so Eingaben mitlesen. */
+ try{ if(window.top!==window.self) window.top.location=window.self.location; }catch(e){}
+
+ /* 4. Nur Bilder von der eigenen Seite und Daten-Adressen laden. */
+ const meta=document.createElement('meta');
+ meta.httpEquiv='Content-Security-Policy';
+ meta.content="object-src 'none'; base-uri 'self'; form-action 'none'";
+ document.head.appendChild(meta);
+})();
 
 const $=s=>document.querySelector(s);
 const logEl=$('#log'),vCam=$('#vCam'),vScr=$('#vScr'),tag=$('#tag'),input=$('#input'),heard=$('#heard');
@@ -602,7 +679,10 @@ async function ensureTts(force){
  ttsModel=m;S.set('o.ttsModel',m);return m;
 }
 
-async function neuralBlob(text){
+async function neuralBlob(text,stimmeFest){
+ /* Die gewaehlte Stimme wird beim Aufruf eingefroren. Aendert der Nutzer
+    waehrend des Sprechens etwas, bleibt der laufende Satz konsistent. */
+ const stimme=stimmeFest||C.neuralVoice;
  let last='';
  for(let attempt=0;attempt<2;attempt++){
   const m=await ensureTts(attempt>0);
@@ -610,7 +690,7 @@ async function neuralBlob(text){
    method:'POST',headers:{'Content-Type':'application/json'},
    body:JSON.stringify({contents:[{parts:[{text:C.style+': '+text}]}],
     generationConfig:{responseModalities:['AUDIO'],
-     speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:C.neuralVoice}}}}})});
+     speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:stimme}}}}})});
   let j=null;try{j=await r.json()}catch(e){}
   if(!r.ok){last=apiErr(r.status,j&&j.error&&j.error.message);
    if(r.status===404||r.status===400){ttsModel='';S.del('o.ttsModel');continue;}
@@ -699,9 +779,27 @@ function stopSpeaking(){
  queue=[];speaking=false;
 }
 let queue=[],draining=false;
-function enqueue(t){t=clean(t);if(!t||!C.autoSpeak)return;
- if(queue.length&&queue[queue.length-1]===t)return;   /* nichts doppelt vorlesen */
- queue.push(t);drain();}
+/* Lange Antworten werden in Haeppchen zerlegt. Das erste ist absichtlich kurz,
+   damit die Stimme sofort einsetzt statt auf den ganzen Text zu warten. */
+function haeppchen(t){
+ const saetze=t.split(/(?<=[.!?…])\s+/).filter(Boolean);
+ const teile=[];let puffer='';
+ saetze.forEach((s,i)=>{
+  const grenze = teile.length===0 ? 90 : 220;
+  if((puffer+' '+s).trim().length>grenze&&puffer){teile.push(puffer.trim());puffer=s;}
+  else puffer=(puffer+' '+s).trim();
+ });
+ if(puffer)teile.push(puffer.trim());
+ return teile.length?teile:[t];
+}
+function enqueue(t){
+ t=clean(t);if(!t||!C.autoSpeak)return;
+ haeppchen(t).forEach(x=>{
+  if(queue.length&&queue[queue.length-1]===x)return;
+  queue.push(x);
+ });
+ drain();
+}
 async function drain(){
  if(draining)return;draining=true;
  while(queue.length){const t=queue.shift();
@@ -1155,93 +1253,155 @@ const MOBIL = native() || /Android|iPhone|iPad/i.test(navigator.userAgent||'');
 const enc = encodeURIComponent;
 
 const APPS=[
- {n:'YouTube', w:/you ?tube/i,
+ {n:'YouTube', w:/you ?tube|yt\b/i,
   m:q=>q?'vnd.youtube://results?search_query='+enc(q):'vnd.youtube://',
   d:q=>q?'https://www.youtube.com/results?search_query='+enc(q):'https://www.youtube.com'},
-
- {n:'WhatsApp', w:/whats ?app/i,
-  m:()=>'whatsapp://send', d:()=>'https://web.whatsapp.com'},
-
- {n:'Spotify', w:/spotify|musik/i,
-  m:q=>q?'spotify:search:'+enc(q):'spotify:',
-  d:q=>q?'spotify:search:'+enc(q):'spotify:',
+ {n:'YouTube Music', w:/youtube ?music|yt ?music/i,
+  m:q=>q?'https://music.youtube.com/search?q='+enc(q):'https://music.youtube.com',
+  d:q=>q?'https://music.youtube.com/search?q='+enc(q):'https://music.youtube.com'},
+ {n:'WhatsApp', w:/whats ?app/i, m:()=>'whatsapp://send', d:()=>'https://web.whatsapp.com'},
+ {n:'Spotify', w:/spotify|musik|playlist/i,
+  m:q=>q?'spotify:search:'+enc(q):'spotify:', d:q=>q?'spotify:search:'+enc(q):'spotify:',
   ersatz:q=>q?'https://open.spotify.com/search/'+enc(q):'https://open.spotify.com'},
-
  {n:'Fortnite', w:/fortnite/i,
   m:()=>'market://details?id=com.epicgames.fortnite',
   d:()=>'com.epicgames.launcher://apps/Fortnite?action=launch',
   ersatz:()=>'https://www.fortnite.com'},
-
- {n:'Epic Games', w:/epic ?games|epic launcher/i,
-  m:()=>'market://details?id=com.epicgames.portal',
-  d:()=>'com.epicgames.launcher://apps',
+ {n:'Epic Games', w:/epic/i,
+  m:()=>'market://details?id=com.epicgames.portal', d:()=>'com.epicgames.launcher://apps',
   ersatz:()=>'https://store.epicgames.com'},
-
- {n:'Steam', w:/steam/i,
-  m:()=>'steam://open/main', d:()=>'steam://open/main',
+ {n:'Steam', w:/steam/i, m:()=>'steam://open/main', d:()=>'steam://open/main',
   ersatz:q=>q?'https://store.steampowered.com/search/?term='+enc(q):'https://store.steampowered.com'},
-
- {n:'Discord', w:/discord/i,
-  m:()=>'discord://', d:()=>'discord://',
-  ersatz:()=>'https://discord.com/app'},
-
+ {n:'Minecraft', w:/minecraft/i, m:()=>'minecraft://', d:()=>'minecraft://',
+  ersatz:()=>'https://www.minecraft.net'},
+ {n:'Roblox', w:/roblox/i, m:()=>'roblox://', d:()=>'roblox://', ersatz:()=>'https://www.roblox.com/games'},
+ {n:'Valorant', w:/valorant/i, m:()=>null, d:()=>'riotclient://open-app?appName=valorant',
+  ersatz:()=>'https://playvalorant.com'},
+ {n:'League of Legends', w:/league|lol\b/i, m:()=>null, d:()=>'riotclient://open-app?appName=league_of_legends',
+  ersatz:()=>'https://www.leagueoflegends.com'},
+ {n:'Battle.net', w:/battle ?net|blizzard/i, m:()=>null, d:()=>'battlenet://',
+  ersatz:()=>'https://battle.net'},
+ {n:'Discord', w:/discord/i, m:()=>'discord://', d:()=>'discord://', ersatz:()=>'https://discord.com/app'},
  {n:'Twitch', w:/twitch/i,
   m:q=>q?'twitch://stream/'+enc(q):'twitch://',
   d:q=>q?'https://www.twitch.tv/'+enc(q):'https://www.twitch.tv'},
-
  {n:'Netflix', w:/netflix/i,
-  m:()=>'nflx://', d:()=>'https://www.netflix.com'},
-
- {n:'Instagram', w:/insta(gram)?/i,
-  m:()=>'instagram://app', d:()=>'https://www.instagram.com'},
-
- {n:'TikTok', w:/tik ?tok/i,
-  m:()=>'snssdk1233://', d:()=>'https://www.tiktok.com'},
-
- {n:'Telegram', w:/telegram/i,
-  m:()=>'tg://', d:()=>'https://web.telegram.org'},
-
- {n:'Snapchat', w:/snap(chat)?/i,
-  m:()=>'snapchat://', d:()=>'https://web.snapchat.com'},
-
- {n:'Reddit', w:/reddit/i,
-  m:()=>'reddit://', d:()=>'https://www.reddit.com'},
-
- {n:'Roblox', w:/roblox/i,
-  m:()=>'roblox://', d:()=>'roblox://',
-  ersatz:()=>'https://www.roblox.com/games'},
-
+  m:q=>q?'https://www.netflix.com/search?q='+enc(q):'nflx://',
+  d:q=>q?'https://www.netflix.com/search?q='+enc(q):'https://www.netflix.com'},
+ {n:'Disney Plus', w:/disney/i, m:()=>'disneyplus://', d:()=>'https://www.disneyplus.com'},
+ {n:'Prime Video', w:/prime ?video|amazon ?prime/i, m:()=>'https://www.primevideo.com', d:()=>'https://www.primevideo.com'},
+ {n:'Amazon', w:/amazon/i,
+  m:q=>q?'https://www.amazon.de/s?k='+enc(q):'https://www.amazon.de',
+  d:q=>q?'https://www.amazon.de/s?k='+enc(q):'https://www.amazon.de'},
+ {n:'eBay', w:/ebay/i, m:q=>q?'https://www.ebay.de/sch/i.html?_nkw='+enc(q):'https://www.ebay.de',
+  d:q=>q?'https://www.ebay.de/sch/i.html?_nkw='+enc(q):'https://www.ebay.de'},
+ {n:'Instagram', w:/insta(gram)?/i, m:()=>'instagram://app', d:()=>'https://www.instagram.com'},
+ {n:'TikTok', w:/tik ?tok/i, m:()=>'snssdk1233://', d:()=>'https://www.tiktok.com'},
+ {n:'Telegram', w:/telegram/i, m:()=>'tg://', d:()=>'https://web.telegram.org'},
+ {n:'Snapchat', w:/snap(chat)?/i, m:()=>'snapchat://', d:()=>'https://web.snapchat.com'},
+ {n:'Reddit', w:/reddit/i, m:()=>'reddit://', d:()=>'https://www.reddit.com'},
+ {n:'X', w:/twitter|^x$/i, m:()=>'twitter://', d:()=>'https://x.com'},
+ {n:'Facebook', w:/facebook|fb\b/i, m:()=>'fb://', d:()=>'https://www.facebook.com'},
+ {n:'Pinterest', w:/pinterest/i, m:()=>'pinterest://', d:()=>'https://www.pinterest.de'},
+ {n:'LinkedIn', w:/linkedin/i, m:()=>'linkedin://', d:()=>'https://www.linkedin.com'},
+ {n:'Wikipedia', w:/wikipedia|wiki/i,
+  m:q=>q?'https://de.wikipedia.org/wiki/Spezial:Suche?search='+enc(q):'https://de.wikipedia.org',
+  d:q=>q?'https://de.wikipedia.org/wiki/Spezial:Suche?search='+enc(q):'https://de.wikipedia.org'},
+ {n:'GitHub', w:/github/i, m:q=>q?'https://github.com/search?q='+enc(q):'https://github.com',
+  d:q=>q?'https://github.com/search?q='+enc(q):'https://github.com'},
  {n:'Karten', w:/karte|maps|navigation|route|navigier/i,
-  m:q=>'geo:0,0?q='+enc(q||''),
-  d:q=>'https://www.google.com/maps/search/?api=1&query='+enc(q||'')},
-
- {n:'Telefon', w:/anruf|telefon|ruf .* an/i,
-  m:q=>'tel:'+enc((q||'').replace(/[^\d+]/g,'')),
-  d:q=>'tel:'+enc((q||'').replace(/[^\d+]/g,''))},
-
- {n:'E-Mail', w:/^mail$|e-?mail/i,
-  m:q=>'mailto:'+enc(q||''), d:q=>'mailto:'+enc(q||'')},
-
- {n:'Kalender', w:/kalender|termin/i,
-  m:()=>'content://com.android.calendar/time/',
+  m:q=>'geo:0,0?q='+enc(q||''), d:q=>'https://www.google.com/maps/search/?api=1&query='+enc(q||'')},
+ {n:'Wetter', w:/wetter/i, m:q=>'https://www.google.com/search?q=Wetter+'+enc(q||''),
+  d:q=>'https://www.google.com/search?q=Wetter+'+enc(q||'')},
+ {n:'Übersetzer', w:/übersetz|translate/i,
+  m:q=>'https://translate.google.com/?text='+enc(q||''), d:q=>'https://translate.google.com/?text='+enc(q||'')},
+ {n:'Notizen', w:/notiz|notes|keep/i,
+  m:q=>q?'https://keep.google.com/#NEWNOTE?text='+enc(q):'https://keep.google.com',
+  d:q=>q?'https://keep.google.com/#NEWNOTE?text='+enc(q):'https://keep.google.com'},
+ {n:'Drive', w:/drive|dateien|cloud/i, m:()=>'https://drive.google.com', d:()=>'https://drive.google.com'},
+ {n:'Dokument', w:/dokument|docs|schreiben/i, m:()=>'https://docs.google.com/document/create',
+  d:()=>'https://docs.google.com/document/create'},
+ {n:'Tabelle', w:/tabelle|sheets|excel/i, m:()=>'https://docs.google.com/spreadsheets/create',
+  d:()=>'https://docs.google.com/spreadsheets/create'},
+ {n:'Kalender', w:/kalender|termin/i, m:()=>'content://com.android.calendar/time/',
   d:()=>'https://calendar.google.com'},
-
- {n:'Wecker', w:/wecker|uhr|timer/i,
-  m:()=>'intent://#Intent;action=android.intent.action.SHOW_ALARMS;end',
+ {n:'Telefon', w:/anruf|telefon|ruf .* an/i,
+  m:q=>'tel:'+enc((q||'').replace(/[^\d+]/g,'')), d:q=>'tel:'+enc((q||'').replace(/[^\d+]/g,''))},
+ {n:'E-Mail', w:/^mail$|e-?mail|gmail/i, m:q=>'mailto:'+enc(q||''), d:q=>'mailto:'+enc(q||'')},
+ {n:'Wecker', w:/wecker|alarm/i, m:()=>'intent://#Intent;action=android.intent.action.SHOW_ALARMS;end',
+  d:()=>'https://www.google.com/search?q=wecker'},
+ {n:'Timer', w:/timer|stoppuhr/i, m:()=>'intent://#Intent;action=android.intent.action.SET_TIMER;end',
   d:()=>'https://www.google.com/search?q=timer'},
-
- {n:'Play Store', w:/play ?store/i,
-  m:q=>q?'market://search?q='+enc(q):'market://',
-  d:q=>q?'https://play.google.com/store/search?q='+enc(q):'https://play.google.com'},
-
- {n:'Einstellungen', w:/einstellungen/i,
-  m:()=>'intent://#Intent;action=android.settings.SETTINGS;end',
-  d:()=>null},
-
- {n:'Google', w:/google|suche|such/i,
-  m:q=>'https://www.google.com/search?q='+enc(q||''),
-  d:q=>'https://www.google.com/search?q='+enc(q||'')}
+ {n:'Play Store', w:/play ?store|app ?store/i,
+  m:q=>q?'market://search?q='+enc(q):'market://', d:q=>q?'https://play.google.com/store/search?q='+enc(q):'https://play.google.com'},
+ {n:'Einstellungen', w:/einstellungen|settings/i,
+  m:()=>'intent://#Intent;action=android.settings.SETTINGS;end', d:()=>null},
+ {n:'Rechner', w:/rechner|taschenrechner/i,
+  m:()=>'intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_CALCULATOR;end',
+  d:()=>'https://www.google.com/search?q=rechner'},
+ {n:'Google', w:/google|^such|suche/i,
+  m:q=>'https://www.google.com/search?q='+enc(q||''), d:q=>'https://www.google.com/search?q='+enc(q||'')}
 ];
+
+/* ═══ Universalweg: alles oeffnen, auch was nicht in der Liste steht ═══
+   Erkennt Adressen, Dateien und rein gesprochene Namen. Kennt ORION eine
+   Sache nicht, wird daraus eine sinnvolle Adresse gebaut, statt aufzugeben. */
+const DATEI_ENDUNG=/\.(pdf|txt|doc|docx|odt|xls|xlsx|ods|ppt|pptx|csv|md|rtf|zip|rar|7z|jpg|jpeg|png|gif|webp|svg|mp3|wav|mp4|mkv|mov|apk|exe|json|xml|html?)$/i;
+/* Nur echte Netz-Endungen gelten als Internetseite. Sonst wuerde aus
+   "bericht.pdf" faelschlich eine Adresse https://bericht.pdf gebaut. */
+const NETZ_ENDUNG=/\.(de|com|net|org|io|dev|app|tv|gg|co|eu|info|shop|me|ai|xyz|uk|at|ch|fr|it|es|nl|pl|ru|jp)(\/|$|\?)/i;
+function alsAdresse(t){
+ const s=t.trim();
+ if(/^https?:\/\//i.test(s))return s;
+ if(/^(file|content|market|steam|spotify|discord|intent|geo|tel|mailto):/i.test(s))return s;
+ if(DATEI_ENDUNG.test(s.split(/[?#]/)[0])&&!NETZ_ENDUNG.test(s))return null;  /* lokale Datei */
+ if(/^[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(s)&&NETZ_ENDUNG.test(s))return 'https://'+s;
+ return null;
+}
+/* Eine lokale Datei kann eine Webseite nicht selbst oeffnen. ORION bietet
+   deshalb den Dateiwaehler an — damit klappt es auf Handy und Rechner. */
+function lokaleDatei(name){
+ const d=bubble('sys','„'+name+'“ sieht nach einer Datei auf dem Gerät aus.');
+ const b=document.createElement('button');
+ b.textContent=' 📂 Datei auswählen und ansehen';
+ b.style.cssText='display:block;margin-top:8px;background:var(--panel);border:1px solid var(--cyan);color:var(--cyan);border-radius:9px;padding:9px 12px;cursor:pointer;font:inherit;font-size:13px';
+ b.addEventListener('click',()=>$('#fAny').click());
+ d.appendChild(b);
+ return true;
+}
+function istDatei(t){
+ return /\.(pdf|txt|doc|docx|xls|xlsx|ppt|pptx|csv|md|zip|jpg|jpeg|png|gif|mp3|mp4|apk)(\?|$)/i.test(t.trim());
+}
+function universalOeffnen(begriff,zusatz){
+ const roh=(begriff+' '+(zusatz||'')).trim();
+ /* 1. Lokale Datei? Dann den Dateiwaehler anbieten. */
+ if(DATEI_ENDUNG.test(begriff.trim().split(/[?#]/)[0])&&!NETZ_ENDUNG.test(begriff))
+  return lokaleDatei(begriff.trim());
+ /* 2. Direkt eine Adresse? */
+ const adr=alsAdresse(begriff);
+ if(adr){
+  starte(adr);
+  bubble('sys',(istDatei(adr)?'Öffne Datei: ':'Öffne: ')+adr);
+  return true;
+ }
+ /* 2. Klingt es nach einer Internetseite ohne Endung? "öffne wikipedia" */
+ const wort=begriff.trim().split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9-]/g,'');
+ if(wort.length>2&&!zusatz){
+  const rat='https://www.'+wort+'.com';
+  starte(rat);
+  const d=bubble('sys','Kenne „'+begriff+'“ nicht — versuche '+rat);
+  const l=document.createElement('a');
+  l.href='https://www.google.com/search?q='+enc(roh);
+  l.target='_blank';l.rel='noopener';l.textContent='  → stattdessen suchen';
+  l.style.cssText='color:var(--cyan);text-decoration:underline';
+  d.appendChild(l);
+  return true;
+ }
+ /* 3. Sonst: suchen. */
+ starte('https://www.google.com/search?q='+enc(roh));
+ bubble('sys','Suche nach: '+roh);
+ return true;
+}
 
 function starte(url){
  if(!url)return false;
@@ -1259,7 +1419,8 @@ function starte(url){
 }
 function openApp(name,arg){
  const a=APPS.find(x=>x.w.test(name));
- if(!a)return false;
+ /* Nicht in der Liste? Dann nicht aufgeben, sondern den Universalweg nehmen. */
+ if(!a)return universalOeffnen(name,arg);
  const url=MOBIL?a.m(arg||''):a.d(arg||'');
  if(!url){
   bubble('err',a.n+' lässt sich nur am Handy öffnen.');
@@ -1418,7 +1579,7 @@ function tryAppCommand(t){
  return false;
 }
 
-async function send(text,dataUrl,quiet){
+async function send(text,dataUrl,quiet,filtern){
  if(busy)return;
  stopSpeaking();
  if(/^(nachrichten|news|schlagzeilen|aktuelle lage)\b/i.test(text.trim())&&!dataUrl){
@@ -1470,7 +1631,22 @@ async function send(text,dataUrl,quiet){
   harvest(full);
   const shown=full.replace(/^MERKEN:.*$/gim,'').trim();
   b.textContent=shown||'…';
-  const rest=full.slice(spoken).replace(/^MERKEN:.*$/gim,'').trim();
+  let rest=full.slice(spoken).replace(/^MERKEN:.*$/gim,'').trim();
+  if(filtern&&rest){
+   /* Dauerblick: nur wirklich neue Saetze vorlesen. Alles schon Gesagte
+      wird still verworfen, damit nichts zweimal kommt. */
+   const vorher=rest;
+   rest=nurNeues(rest);
+   if(!rest||/^\s*nichts neues/i.test(vorher)){
+    b.remove();                    /* nichts Neues: gar nicht erst anzeigen */
+    hist.push({role:'user',text},{role:'model',text:shown});
+    if(hist.length>20)hist=hist.slice(-20);
+    busy=false;setState('Beobachtet','Dauerblick läuft');
+    if(live)startListen();
+    return;
+   }
+   b.textContent=rest;
+  }
   if(rest)enqueue(rest);
   hist.push({role:'user',text},{role:'model',text:shown});
   if(hist.length>20)hist=hist.slice(-20);
@@ -1539,6 +1715,35 @@ function startWatchdog(){
 }
 
 /* ═══════════ DAUERBLICK ═══════════ */
+/* ═══ Duplikat-Filter ═══
+   Beim Dauerblick sieht ORION denselben Bildschirm immer wieder. Ohne Filter
+   liest er dieselbe Nachricht bei jedem Durchgang erneut vor. Jeder Satz
+   bekommt daher eine Kennung; bereits verarbeitete werden hart aussortiert. */
+let verarbeitet=[];            /* processedMessageIds */
+const VERARBEITET_MAX=400;
+function kennung(s){
+ /* Kleinschreibung ohne Sonderzeichen, damit "Hallo!" und "hallo" gleich sind. */
+ const norm=s.toLowerCase().replace(/[^a-z0-9äöüß ]/g,'').replace(/\s+/g,' ').trim();
+ let hash=5381;
+ for(let i=0;i<norm.length;i++)hash=((hash*33)^norm.charCodeAt(i))>>>0;
+ return norm.slice(0,40)+'#'+hash;
+}
+function schonGehabt(s){
+ if(!s||s.length<3)return true;
+ const k=kennung(s);
+ if(verarbeitet.indexOf(k)>=0)return true;
+ verarbeitet.push(k);
+ if(verarbeitet.length>VERARBEITET_MAX)verarbeitet=verarbeitet.slice(-VERARBEITET_MAX);
+ return false;
+}
+/* Filtert aus einer Antwort alle Zeilen, die schon einmal vorgelesen wurden. */
+function nurNeues(text){
+ const zeilen=text.split(/\n+|(?<=[.!?])\s+/).map(z=>z.trim()).filter(Boolean);
+ const neu=zeilen.filter(z=>!schonGehabt(z));
+ return neu.join(' ');
+}
+function filterZuruecksetzen(){verarbeitet=[];}
+
 async function toggleWatch(){
  if(watchTimer){clearInterval(watchTimer);watchTimer=null;$('#bWatch').setAttribute('aria-pressed','false');bubble('sys','Dauerblick aus.');return;}
  /* Nicht meckern, sondern selbst einschalten: am Handy die Kamera,
@@ -1554,12 +1759,7 @@ async function toggleWatch(){
  const tick=async()=>{
   if(busy||speaking||pttOn)return;
   const f=await frame();if(!f)return;
-  const vorher=hist.length;
-  await send('Kurzer Blick. Hoechstens zwei Saetze: was ist neu oder wichtig. Sind Chat-Nachrichten sichtbar, lies die neuesten vor. Ist nichts Neues da, antworte nur mit: nichts Neues.',f,true);
-  /* Bei "nichts Neues" nicht jedes Mal denselben Satz vorlesen. */
-  const neu=hist.length>vorher?hist[hist.length-1].text:'';
-  if(/^\s*nichts neues/i.test(neu)&&/^\s*nichts neues/i.test(letzte))stopSpeaking();
-  letzte=neu;
+  await send('Kurzer Blick. Hoechstens zwei Saetze: was ist neu oder wichtig. Sind Chat-Nachrichten oder Kommentare sichtbar, gib die neuesten wieder — jede nur einmal. Ist nichts Neues da, antworte nur mit: nichts Neues.',f,true,true);
  };
  tick();watchTimer=setInterval(tick,Math.max(5,C.interval)*1000);
 }
@@ -1588,6 +1788,15 @@ const CHECKS=[
    if(!SECURE)return{s:'fail',d:'Braucht HTTPS.'};
    if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia)return{s:'fail',d:'Dieser Browser kann es nicht. Chrome oder Edge am PC nehmen.'};
    return{s:'pass',d:'Verfügbar. Beim Drücken fragt der Browser, was du teilen willst.'};}},
+ {id:'safe',n:'Sicherheit',run:async()=>{
+   const punkte=[];
+   punkte.push((location.protocol==='https:'||native()?'✓':'✕')+' verschlüsselte Verbindung');
+   punkte.push('✓ Schlüssel nur auf diesem Gerät, kein fremder Server');
+   punkte.push('✓ Versand des Schlüssels an unbekannte Adressen gesperrt');
+   punkte.push((window.top===window.self?'✓':'✕')+' nicht in fremdem Rahmen');
+   punkte.push(C.remember?'! Schlüssel bleibt gespeichert — bei geteiltem Gerät ausschalten':'✓ Schlüssel wird nicht gespeichert');
+   const schlecht=punkte.some(x=>x[0]==='✕');
+   return{s:schlecht?'fail':'pass',d:punkte.join('<br>')};}},
  {id:'key',n:'API-Schlüssel',run:async()=>{
    if(C.provider!=='gemini')return{s:'pass',d:'Eigener Server eingestellt.'};
    if(!C.apiKey)return{s:'fail',d:'Kein Schlüssel gespeichert. Zahnrad → einfügen → auf ein anderes Feld tippen, dann wird er sofort gesichert.'};
@@ -1667,6 +1876,10 @@ function fill(){
  $('#rate').value=C.rate;$('#rateV').textContent=C.rate.toFixed(2)+'×';
  $('#pause').value=C.pause;$('#pauseV').textContent=(C.pause/1000).toFixed(1)+' s';
  if(C.devVoice)$('#devVoice').value=C.devVoice;
+ const ps=$('#persona');
+ if(!ps.options.length)Object.keys(PERSONAS).forEach(k=>{
+  const o=document.createElement('option');o.value=k;o.textContent=PERSONAS[k].name;ps.appendChild(o);});
+ ps.value=C.persona;
  $('#updateUrl').value=C.updateUrl;$('#autoUpdate').checked=C.autoUpdate;
  $('#sparen').checked=C.sparen;
  $('#autoSpeak').checked=C.autoSpeak;$('#newsOnStart').checked=C.newsOnStart;$('#remember').checked=C.remember;
@@ -1683,6 +1896,7 @@ function hint(){const p=$('#provider').value;
  $('#bModels').style.display=p==='gemini'?'':'none';
 }
 $('#provider').addEventListener('change',hint);
+$('#persona').addEventListener('change',e=>{$('#sysPrompt').value=bauePrompt(e.target.value);});
 $('#rate').addEventListener('input',e=>$('#rateV').textContent=(+e.target.value).toFixed(2)+'×');
 $('#pause').addEventListener('input',e=>$('#pauseV').textContent=(+e.target.value/1000).toFixed(1)+' s');
 $('#bTest').addEventListener('click',async()=>{
@@ -1759,6 +1973,13 @@ $('#bKeyTest').addEventListener('click',async()=>{
    b.style.borderColor='var(--cyan)';b.style.color='var(--cyan)';},6000);}
 });
 $('#bUpdate').addEventListener('click',()=>{
+ const altePersona=C.persona;
+ C.persona=$('#persona').value;S.set('o.persona',C.persona);
+ /* Charakter gewechselt: den Grundtext austauschen, eigene Zusaetze behalten. */
+ if(C.persona!==altePersona){
+  C.sysPrompt=bauePrompt(C.persona);
+  $('#sysPrompt').value=C.sysPrompt;
+ }
  C.updateUrl=$('#updateUrl').value.trim();S.set('o.updateUrl',C.updateUrl);sucheUpdate(false);});
 $('#bUpdateOff').addEventListener('click',updateZuruecksetzen);
 $('#bSet').addEventListener('click',()=>{fill();dSet.showModal();});
@@ -1776,6 +1997,13 @@ dSet.addEventListener('close',()=>{
  C.ttsMode=$('#ttsMode').value;C.neuralVoice=$('#neuralVoice').value;C.devVoice=$('#devVoice').value;
  C.sttMode=$('#sttMode').value;
  C.style=$('#style').value.trim()||'Sprich ruhig und hoeflich';C.rate=+$('#rate').value;C.pause=+$('#pause').value;
+ const altePersona=C.persona;
+ C.persona=$('#persona').value;S.set('o.persona',C.persona);
+ /* Charakter gewechselt: den Grundtext austauschen, eigene Zusaetze behalten. */
+ if(C.persona!==altePersona){
+  C.sysPrompt=bauePrompt(C.persona);
+  $('#sysPrompt').value=C.sysPrompt;
+ }
  C.updateUrl=$('#updateUrl').value.trim();S.set('o.updateUrl',C.updateUrl);
  C.autoUpdate=$('#autoUpdate').checked;S.set('o.autoUpdate',C.autoUpdate?'1':'0');
  C.sparen=$('#sparen').checked;S.set('o.sparen',C.sparen?'1':'0');
@@ -1820,6 +2048,27 @@ $('#fPick').addEventListener('change',async e=>{
    c.toDataURL('image/jpeg',.72));
  }catch(err){bubble('err','Bild konnte nicht gelesen werden: '+err.message);}
 });
+/* Beliebige Datei oeffnen: Bilder werden angesehen, Text wird gelesen,
+   alles andere wird zumindest benannt. Laeuft auf Handy und Rechner gleich. */
+$('#fAny').addEventListener('change',async e=>{
+ const f=e.target.files&&e.target.files[0];e.target.value='';
+ if(!f)return;
+ const kb=(f.size/1024).toFixed(0);
+ try{
+  if(/^image\//.test(f.type)){
+   const dt=new DataTransfer();dt.items.add(f);
+   $('#fPick').files=dt.files;$('#fPick').dispatchEvent(new Event('change'));return;
+  }
+  if(/^(text\/|application\/(json|xml|javascript))/.test(f.type)||/\.(txt|md|csv|json|xml|log|ini|yml|yaml)$/i.test(f.name)){
+   let txt=await f.text();
+   if(txt.length>12000)txt=txt.slice(0,12000)+'\n… (gekürzt)';
+   send('Das ist der Inhalt meiner Datei „'+f.name+'“ ('+kb+' KB). Fasse zusammen, was drinsteht, und sag mir das Wichtigste.\n\n'+txt,null);
+   return;
+  }
+  bubble('sys','„'+f.name+'“ ('+kb+' KB) kann ich nicht direkt lesen. Text- und Bilddateien gehen.');
+ }catch(err){bubble('err','Datei ließ sich nicht lesen: '+err.message);}
+});
+
 /* Bild aus der Zwischenablage einfuegen — praktisch am Rechner. */
 document.addEventListener('paste',ev=>{
  const it=[...(ev.clipboardData&&ev.clipboardData.items||[])].find(x=>x.type.indexOf('image')===0);
@@ -1870,8 +2119,26 @@ if(!native())(function(){
  const a=document.createElement('link');a.rel='apple-touch-icon';a.href=icon;document.head.appendChild(a);
 })();
 
+/* ═══════════ PC-OVERLAY ═══════════
+   Laeuft ORION als Desktop-Programm, schickt das schwebende Fenster
+   Befehle herein. Im Browser passiert hier schlicht nichts. */
+if(window.require||navigator.userAgent.indexOf('Electron')>=0){
+ try{
+  const el=window.require&&window.require('electron');
+  if(el&&el.ipcRenderer){
+   el.ipcRenderer.on('von-overlay',(e,was)=>{
+    if(was==='zuschauen-an'&&!watchTimer)toggleWatch();
+    if(was==='zuschauen-aus'&&watchTimer)toggleWatch();
+    if(was==='mikro-an'&&!live)toggleLive();
+    if(was==='mikro-aus'&&live)toggleLive();
+    if(was==='screenshot')look('Was ist gerade auf dem Bildschirm zu sehen? Kurz und konkret.');
+   });
+  }
+ }catch(e){}
+}
+
 /* ═══════════ AKTUALISIERUNG ═══════════ */
-const APP_VER = window.ORION_BUNDLED || 9;
+const APP_VER = window.ORION_BUNDLED || 10;
 async function sucheUpdate(still){
  const url=C.updateUrl;
  if(!url){if(!still)bubble('sys','Keine Update-Adresse eingetragen. Zahnrad ganz unten.');return;}
