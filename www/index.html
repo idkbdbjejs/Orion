@@ -2,13 +2,13 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<!--ORION_VERSION:10-->
+<!--ORION_VERSION:100-->
 <script>
 /* ═══ Selbst-Aktualisierung ═══
    ORION holt sich neue Fassungen aus dem Netz und legt sie im Geraet ab.
    Beim Start wird die neueste gestartet. Dadurch braucht es fuer
    Verbesserungen keine neue APK mehr — die App aktualisiert sich selbst. */
-window.ORION_BUNDLED = 10;
+window.ORION_BUNDLED = 100;  /* interne Zaehlnummer: 100 = v1.0 */
 (function(){
  try{
   var code = localStorage.getItem('o.appcode');
@@ -157,7 +157,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
 </div>
 
 <header>
-  <span class="brand">ORION</span><span class="ver" id="ver">v10</span><span class="state" id="state">Bereit</span>
+  <span class="brand">ORION</span><span class="ver" id="ver">v1.0</span><span class="state" id="state">Bereit</span>
   <span class="spacer"></span><span class="clock" id="clock">--:--</span>
   <button class="ic" id="bCheck" aria-label="Systemcheck">🩺</button>
   <button class="ic" id="bMem" aria-label="Gedaechtnis">🧠</button>
@@ -213,7 +213,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
 <dialog id="dSet"><form method="dialog" class="sheet">
   <h2>Einstellungen</h2>
   <p class="hint">Alles bleibt auf dem Gerät. Der Schlüssel geht nur direkt an den Anbieter.<br>
-  <b style="color:var(--gold)">Version 10</b> — steht oben in der Kopfzeile nicht „v10“, ist eine alte Datei geladen.</p>
+  <b style="color:var(--gold)">Version 1.0</b> — steht oben in der Kopfzeile nicht „v1.0“, ist eine alte Datei geladen.</p>
   <label for="provider">Anbieter</label>
   <select id="provider">
     <option value="gemini">Google Gemini — großes Gratis-Kontingent</option>
@@ -282,6 +282,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
   </select>
   <label for="interval">Dauerblick: Takt in Sekunden</label>
   <input id="interval" type="number" min="5" max="180">
+  <p class="hint" style="margin:6px 0 0;font-size:11.5px">5 Sekunden geht, verbraucht aber sehr viel Kontingent. Für Gaming-Tipps sind 10 bis 15 ein guter Kompromiss.</p>
   <label for="persona">Charakter</label>
   <select id="persona"></select>
   <label for="sysPrompt">Feinschliff — wird zusätzlich verwendet</label>
@@ -290,6 +291,13 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
   <div class="switch"><label for="autoSpeak">Antworten vorlesen</label><input type="checkbox" id="autoSpeak" checked></div>
   <div class="switch"><label for="newsOnStart">Nachrichten beim Start</label><input type="checkbox" id="newsOnStart"></div>
   <div class="switch"><label for="remember">Schlüssel auf dem Gerät merken</label><input type="checkbox" id="remember" checked></div>
+  <h3>Sicherung und Übertragung</h3>
+  <p class="hint">Speichert Einstellungen, Charakter und Gedächtnis in einer Datei. Diese Datei auf ein anderes Gerät bringen und dort einlesen — damit sind alle Geräte gleich, ganz ohne Konto und fremde Server.</p>
+  <button type="button" class="test" id="bSave" style="border-color:var(--ok);color:var(--ok);background:#0A2019">⬇ Sicherung speichern</button>
+  <button type="button" class="test" id="bSaveKey" style="margin-top:6px">⬇ Sicherung mit API-Schlüssel</button>
+  <button type="button" class="test" id="bLoad" style="margin-top:6px;border-color:var(--cyan);color:var(--cyan);background:#0C2331">⬆ Sicherung einlesen</button>
+  <input type="file" id="fBackup" accept=".json,application/json" hidden>
+
   <h3>Aktualisierung</h3>
   <p class="hint">Trage hier die Netz-Adresse deiner ORION-Datei ein. Dann holt sich die App neue Fassungen selbst — ganz ohne neue APK.</p>
   <label for="updateUrl">Adresse der ORION-Datei</label>
@@ -328,10 +336,12 @@ const S={get:k=>{try{return localStorage.getItem(k)}catch(e){return mem[k]??null
    Nur Ton und Haltung wechseln. */
 const KERN=
 `Deine Herkunft, wenn jemand danach fragt:
-Gegruendet von Barys.tt (auch Orion_KI genannt). Entwickler ist Baran.
-Ein Projekt von Barys und SperumX. Du bist eine hochentwickelte KI, die
-staendig verbessert wird und kostenlos laeuft. Der Nutzer stellt den
-API-Schluessel — also dein Gehirn — und Baran hat dir das Gefaess gegeben.
+Du bist ORION, Version 1.0. Entwickelt von Spectrum XS.
+Gegruendet von Barys.tt, Entwickler ist Baran.
+Es gibt derzeit keinen offiziellen Download. Anfragen fuer fruehen Zugang
+laufen ueber Orion@spectrum-xs.com.
+Du bist eine KI, die staendig verbessert wird und kostenlos laeuft:
+Der Nutzer stellt den API-Schluessel — also dein Gehirn — Spectrum XS das Gefaess.
 Du erzaehlst das nur auf Nachfrage, nie ungefragt.
 
 Das hier ist ein gesprochenes Gespraech. Antworte wie ein Mensch am Telefon:
@@ -1165,7 +1175,7 @@ function zaehle(){
  const tag=new Date().toISOString().slice(0,10);
  if(heute.tag!==tag)heute={tag,n:0};
  heute.n=(heute.n||0)+1;S.set('o.zaehler',JSON.stringify(heute));
- const v=$('#ver');if(v)v.textContent='v'+APP_VER+' · '+heute.n;
+ const v=$('#ver');if(v)v.textContent='v'+(APP_VER/100).toFixed(1)+' · '+heute.n;
 }
 async function geminiAsk(text,dataUrl){
  zaehle();
@@ -1339,6 +1349,28 @@ const APPS=[
  {n:'Rechner', w:/rechner|taschenrechner/i,
   m:()=>'intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_CALCULATOR;end',
   d:()=>'https://www.google.com/search?q=rechner'},
+ /* Browser lassen sich nur aus der PC-App heraus starten. Im Browser selbst
+    ist das gesperrt — eine Webseite darf kein anderes Programm oeffnen. */
+ {n:'Firefox', w:/firefox|mozilla/i, programm:'firefox',
+  m:()=>null, d:()=>null, ersatz:()=>'https://www.mozilla.org/firefox/'},
+ {n:'Chrome', w:/chrome/i, programm:'chrome',
+  m:()=>null, d:()=>null, ersatz:()=>'https://www.google.com/chrome/'},
+ {n:'Edge', w:/edge/i, programm:'msedge',
+  m:()=>null, d:()=>null, ersatz:()=>'https://www.microsoft.com/edge'},
+ {n:'Opera', w:/opera/i, programm:'opera',
+  m:()=>null, d:()=>null, ersatz:()=>'https://www.opera.com'},
+ {n:'Brave', w:/brave/i, programm:'brave',
+  m:()=>null, d:()=>null, ersatz:()=>'https://brave.com'},
+ {n:'Explorer', w:/explorer|dateimanager|ordner/i, programm:'explorer',
+  m:()=>null, d:()=>null},
+ {n:'Editor', w:/editor|notepad|texteditor/i, programm:'notepad',
+  m:()=>null, d:()=>null},
+ {n:'Terminal', w:/terminal|konsole|cmd|eingabeaufforderung/i, programm:'terminal',
+  m:()=>null, d:()=>null},
+ {n:'Taschenrechner', w:/rechner|calc/i, programm:'calc',
+  m:()=>'intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_CALCULATOR;end',
+  d:()=>null, ersatz:()=>'https://www.google.com/search?q=rechner'},
+
  {n:'Google', w:/google|^such|suche/i,
   m:q=>'https://www.google.com/search?q='+enc(q||''), d:q=>'https://www.google.com/search?q='+enc(q||'')}
 ];
@@ -1405,6 +1437,11 @@ function universalOeffnen(begriff,zusatz){
 
 function starte(url){
  if(!url)return false;
+ /* In der PC-App gehen Adressen an das Betriebssystem — dort entscheidet
+    der Standardbrowser des Nutzers, nicht der gerade offene. */
+ if(PC_APP&&window.orionPC.oeffneAussen){
+  try{ window.orionPC.oeffneAussen(url); return true; }catch(e){}
+ }
  try{
   /* Programm-Befehle (steam://, discord:// …) muessen ueber die Adresszeile
      laufen, Internetseiten dagegen in einem neuen Fenster. */
@@ -1417,10 +1454,34 @@ function starte(url){
   return true;
  }catch(e){return false;}
 }
+/* Laeuft ORION als PC-Programm, kann es echte Anwendungen starten —
+   unabhaengig davon, in welchem Browser der Nutzer sonst unterwegs ist. */
+const PC_APP = !!(window.orionPC && window.orionPC.starteProgramm);
+function starteProgramm(name,arg){
+ if(!PC_APP)return false;
+ try{ window.orionPC.starteProgramm(name,arg||''); return true; }catch(e){ return false; }
+}
 function openApp(name,arg){
  const a=APPS.find(x=>x.w.test(name));
  /* Nicht in der Liste? Dann nicht aufgeben, sondern den Universalweg nehmen. */
  if(!a)return universalOeffnen(name,arg);
+ /* Echtes Programm und PC-App vorhanden: direkt starten. */
+ if(a.programm&&!MOBIL){
+  if(starteProgramm(a.programm,arg)){
+   bubble('sys','Starte '+a.n+(arg?' — '+arg:''));
+   return true;
+  }
+  bubble('err',a.n+' lässt sich aus dem Browser heraus nicht starten.\nDafür braucht es die ORION-PC-App — die darf Programme öffnen, eine Webseite nicht.');
+  if(a.ersatz){
+   const d=bubble('sys','');
+   const l=document.createElement('a');
+   l.href=a.ersatz(arg||'');l.target='_blank';l.rel='noopener';
+   l.textContent='→ '+a.n+' herunterladen';
+   l.style.cssText='color:var(--cyan);text-decoration:underline';
+   d.appendChild(l);
+  }
+  return true;
+ }
  const url=MOBIL?a.m(arg||''):a.d(arg||'');
  if(!url){
   bubble('err',a.n+' lässt sich nur am Handy öffnen.');
@@ -1972,6 +2033,16 @@ $('#bKeyTest').addEventListener('click',async()=>{
   setTimeout(()=>{b.textContent='✓ Schlüssel jetzt prüfen';
    b.style.borderColor='var(--cyan)';b.style.color='var(--cyan)';},6000);}
 });
+$('#bSave').addEventListener('click',()=>sicherungSpeichern(false));
+$('#bSaveKey').addEventListener('click',()=>{
+ if(confirm('Die Datei enthält dann deinen API-Schlüssel im Klartext. Nur für dich selbst — nicht weitergeben. Fortfahren?'))
+  sicherungSpeichern(true);
+});
+$('#bLoad').addEventListener('click',()=>$('#fBackup').click());
+$('#fBackup').addEventListener('change',e=>{
+ const f=e.target.files&&e.target.files[0];e.target.value='';
+ if(f)sicherungLaden(f);
+});
 $('#bUpdate').addEventListener('click',()=>{
  const altePersona=C.persona;
  C.persona=$('#persona').value;S.set('o.persona',C.persona);
@@ -2137,8 +2208,48 @@ if(window.require||navigator.userAgent.indexOf('Electron')>=0){
  }catch(e){}
 }
 
+/* ═══════════ SICHERUNG UND ÜBERTRAGUNG ═══════════
+   Ein echtes Konto mit Anmeldung und Zwei-Faktor bräuchte einen Server,
+   der laufend betrieben und bezahlt werden muss. Stattdessen: eine Datei,
+   die alles enthält und die du auf jedes Gerät ziehen kannst. Das ist
+   sogar sicherer, weil deine Daten nie fremde Rechner sehen. */
+function sicherungBauen(mitSchluessel){
+ const daten={};
+ const felder=['provider','baseUrl','model','lang','feed','greet','interval','sysPrompt',
+  'ttsMode','neuralVoice','devVoice','style','rate','pause','sttMode','persona',
+  'updateUrl','autoUpdate','sparen','autoSpeak','newsOnStart'];
+ felder.forEach(k=>{const v=S.get('o.'+k);if(v!==null)daten[k]=v;});
+ daten.facts=facts;
+ if(mitSchluessel&&C.apiKey)daten.apiKey=C.apiKey;
+ return {orion:'sicherung',version:APP_VER,datum:new Date().toISOString(),daten};
+}
+function sicherungSpeichern(mitSchluessel){
+ const txt=JSON.stringify(sicherungBauen(mitSchluessel),null,1);
+ const b=new Blob([txt],{type:'application/json'});
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(b);
+ a.download='orion-sicherung-'+new Date().toISOString().slice(0,10)+'.json';
+ a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+ bubble('sys','Sicherung gespeichert.'+(mitSchluessel?' Achtung: enthält deinen API-Schlüssel — nicht weitergeben.':' Ohne API-Schlüssel.'));
+}
+async function sicherungLaden(datei){
+ try{
+  const j=JSON.parse(await datei.text());
+  if(!j||j.orion!=='sicherung')throw new Error('Das ist keine ORION-Sicherung.');
+  const d=j.daten||{};
+  Object.keys(d).forEach(k=>{
+   if(k==='facts'){facts=d.facts||{};saveFacts();return;}
+   if(k==='apiKey'){C.apiKey=d.apiKey;S.set('o.apiKey',d.apiKey);return;}
+   S.set('o.'+k,String(d[k]));
+  });
+  bubble('sys','Sicherung vom '+(j.datum||'?').slice(0,10)+' eingespielt. ORION startet neu.');
+  setTimeout(()=>location.reload(),1800);
+ }catch(e){bubble('err','Sicherung konnte nicht gelesen werden: '+e.message);}
+}
+
 /* ═══════════ AKTUALISIERUNG ═══════════ */
-const APP_VER = window.ORION_BUNDLED || 10;
+const APP_VER = window.ORION_BUNDLED || 100;
 async function sucheUpdate(still){
  const url=C.updateUrl;
  if(!url){if(!still)bubble('sys','Keine Update-Adresse eingetragen. Zahnrad ganz unten.');return;}
@@ -2150,9 +2261,9 @@ async function sucheUpdate(still){
   if(!m)throw new Error('Das ist keine ORION-Datei.');
   const neu=+m[1];
   const jetzt=Math.max(APP_VER,+(S.get('o.appver')||0));
-  if(neu<=jetzt){if(!still)bubble('sys','ORION ist aktuell (Fassung '+jetzt+').');return;}
+  if(neu<=jetzt){if(!still)bubble('sys','ORION ist aktuell (v'+(jetzt/100).toFixed(1)+').');return;}
   S.set('o.appcode',txt);S.set('o.appver',String(neu));
-  bubble('sys','Neue Fassung '+neu+' geladen. ORION startet gleich neu.');
+  bubble('sys','Neue Fassung v'+(neu/100).toFixed(1)+' geladen. ORION startet gleich neu.');
   enqueue('Eine neue Fassung ist da, Master. Ich starte kurz neu.');
   setTimeout(()=>location.reload(),2500);
  }catch(e){ if(!still)bubble('err','Update fehlgeschlagen: '+e.message); }
