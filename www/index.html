@@ -2491,6 +2491,15 @@ const CHECKS=[
    if(!SECURE)return{s:'fail',d:'Braucht HTTPS.'};
    if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia)return{s:'fail',d:'Dieser Browser kann es nicht. Chrome oder Edge am PC nehmen.'};
    return{s:'pass',d:'Verfügbar. Beim Drücken fragt der Browser, was du teilen willst.'};}},
+ {id:'ver',n:'Fassung und Herkunft',fix:'Zeigen',run:async()=>{
+   const hk=herkunft();
+   const alt=hk.laeuft<125;
+   return{s:alt?'fail':'pass',
+    d:'Adresse: <b>'+hk.ort+'</b><br>'
+     +'In der Datei: Stand '+hk.eingebaut+'<br>'
+     +'Nachgeladen: '+(hk.gespeichert||'nichts')+'<br>'
+     +'Es läuft: <b>Stand '+hk.laeuft+'</b> ('+hk.quelle+')'
+     +(alt?'<br><br>Veraltet — neue orion.html an diese Adresse hochladen.':'')};}},
  {id:'log',n:'Protokoll und Selbstheilung',fix:'Leeren',run:async()=>{
    const l=letzteMinuten(60);
    const heilungen=l.filter(e=>e.a==='heilung');
@@ -2548,6 +2557,7 @@ function chkRow(c){
 }
 async function runCheck(c){
  if(c.id==='log'&&c.fix==='Leeren'&&arguments[1]==='fix'){logbuch=[];S.del('o.log');}
+ if(c.id==='ver'&&arguments[1]==='fix'){herkunftZeigen();}
  const row=$$('#chk-'+c.id);if(!row)return;
  const bEl=row.querySelector('.b'), dEl=row.querySelector('.d');
  if(bEl){bEl.className='b wait';bEl.textContent='…';}
@@ -4941,6 +4951,40 @@ async function sicherungLaden(datei){
  }catch(e){bubble('err','Sicherung konnte nicht gelesen werden: '+e.message);}
 }
 
+/* ═══════════ HERKUNFT ANZEIGEN ═══════════
+   Es kam vor, dass an einer Stelle eine alte Datei lag und der Nutzer
+   nicht sehen konnte, welche Fassung gerade laeuft. Deshalb zeigt ORION
+   jetzt, woher die laufende Fassung stammt — eingebaut oder nachgeladen. */
+function herkunft(){
+ const gespeichert=+(S.get('o.appver')||0);
+ const eingebaut=window.ORION_BUNDLED||0;
+ return {
+  laeuft: Math.max(gespeichert,eingebaut),
+  quelle: gespeichert>eingebaut ? 'nachgeladen' : 'eingebaut',
+  eingebaut, gespeichert,
+  ort: location.hostname||'Datei'
+ };
+}
+function herkunftZeigen(){
+ const hk=herkunft();
+ const d=bubble('sys','Fassung V1 Beta · Stand '+hk.laeuft);
+ const t=document.createElement('div');
+ t.style.cssText='margin-top:8px;text-align:left;font-size:12.5px;line-height:1.7;color:var(--muted)';
+ t.innerHTML='Adresse: <b style="color:var(--cyan)">'+hk.ort+'</b><br>'
+  +'In der Datei enthalten: Stand '+hk.eingebaut+'<br>'
+  +'Nachgeladen im Gerät: '+(hk.gespeichert?('Stand '+hk.gespeichert):'nichts')+'<br>'
+  +'<b style="color:var(--gold)">Es läuft: Stand '+hk.laeuft+' ('+hk.quelle+')</b>';
+ d.appendChild(t);
+ if(hk.eingebaut<125){
+  const w=document.createElement('div');
+  w.style.cssText='margin-top:9px;padding:9px;border:1px solid var(--red);border-radius:8px;'
+   +'color:#FFC9D4;font-size:12.5px;text-align:left;line-height:1.6';
+  w.textContent='Die Datei an dieser Adresse ist veraltet. Lade die neue orion.html dorthin hoch — '
+   +'oder trag im Zahnrad eine Update-Adresse ein, dann holt ORION sich neue Fassungen selbst.';
+  d.appendChild(w);
+ }
+}
+
 /* ═══════════ AKTUALISIERUNG ═══════════ */
 const APP_VER = window.ORION_BUNDLED || 125;
 async function sucheUpdate(still){
@@ -5038,9 +5082,26 @@ if(C.apiKey){
  d.appendChild(b);
 }
 if(C.autoUpdate&&C.updateUrl)setTimeout(()=>sucheUpdate(true),3000);
+/* Laeuft eine alte Fassung und ist keine Update-Adresse hinterlegt,
+   einmal deutlich darauf hinweisen statt es still hinzunehmen. */
+setTimeout(()=>{
+ const hk=herkunft();
+ if(hk.laeuft<125&&!C.updateUrl){
+  const d=bubble('err','Achtung: Hier läuft eine alte Fassung (Stand '+hk.laeuft+').');
+  const t=document.createElement('div');
+  t.style.cssText='margin-top:8px;font-size:12.5px;line-height:1.6';
+  t.textContent='An dieser Adresse ('+hk.ort+') liegt eine veraltete Datei. '
+   +'Lade die neue orion.html dorthin hoch. Oder trage im Zahnrad unter „Aktualisierung“ '
+   +'die Adresse ein, wo die neue Datei liegt — dann holt ORION sie sich selbst.';
+  d.appendChild(t);
+ }
+},1500);
 /* Ohne Schluessel nicht mehr sofort den Dialog aufdraengen — das Offline-Koennen
-   reicht fuer vieles, und der Hinweis oben zeigt den Weg. */
-else if(C.provider==='gemini'&&!C.model){ensureModel(true).catch(e=>bubble('err','Modellsuche: '+e.message));}
+   reicht fuer vieles, und der Hinweis oben zeigt den Weg.
+   Mit Schluessel aber gleich ein passendes Modell suchen. */
+if(C.apiKey&&C.provider==='gemini'&&!C.model){
+ ensureModel(true).catch(e=>bubble('err','Modellsuche: '+e.message));
+}
 if(!HOSTED&&!native())$('#bCheck').classList.add('alert');
 </script>
 </body>
