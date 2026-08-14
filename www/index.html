@@ -2,13 +2,13 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<!--ORION_VERSION:125-->
+<!--ORION_VERSION:130-->
 <script>
 /* ═══ Selbst-Aktualisierung ═══
    ORION holt sich neue Fassungen aus dem Netz und legt sie im Geraet ab.
    Beim Start wird die neueste gestartet. Dadurch braucht es fuer
    Verbesserungen keine neue APK mehr — die App aktualisiert sich selbst. */
-window.ORION_BUNDLED = 125;  /* interne Zaehlnummer: 100 = v1.0 */
+window.ORION_BUNDLED = 130;  /* interne Zaehlnummer: 100 = v1.0 */
 (function(){
  try{
   var code = localStorage.getItem('o.appcode');
@@ -41,7 +41,9 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:99;opa
 header{display:flex;align-items:center;gap:9px;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;border-bottom:1px solid var(--line)}
 .brand{font-family:var(--mono);font-size:14px;letter-spacing:.5em;font-weight:700;color:var(--cyan);text-shadow:0 0 18px rgba(77,225,255,.45)}
 .state{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
-.ver{font-family:var(--mono);font-size:9px;color:var(--gold);border:1px solid var(--line);border-radius:5px;padding:2px 5px;letter-spacing:.05em}
+.ver{font-family:var(--mono);font-size:9px;color:var(--gold);border:1px solid var(--line);
+ border-radius:5px;padding:3px 6px;letter-spacing:.05em;background:transparent;cursor:pointer}
+.ver:hover{border-color:var(--gold)}
 .spacer{flex:1}
 .clock{font-family:var(--mono);font-size:11px;color:var(--cyan-dim)}
 .ic{background:var(--panel);border:1px solid var(--line);color:var(--text);width:36px;height:36px;border-radius:10px;font-size:15px;cursor:pointer}
@@ -167,10 +169,42 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
 .wVorschlag button{background:var(--panel);border:1px solid var(--line);color:var(--muted);
  border-radius:99px;padding:5px 10px;cursor:pointer;font:inherit;font-size:11.5px}
 .wVorschlag button:hover{border-color:var(--gold);color:var(--gold)}
+/* Startsequenz */
+#boot{position:fixed;inset:0;z-index:300;background:#04070C;display:flex;
+ flex-direction:column;align-items:center;justify-content:center;gap:14px;
+ padding:24px;transition:opacity .6s}
+#boot.weg{opacity:0;pointer-events:none}
+#bootRing{position:absolute;width:min(76vw,340px);height:min(76vw,340px);top:50%;left:50%;
+ transform:translate(-50%,-58%)}
+#bootMitte{position:relative;text-align:center;transform:translateY(-14%)}
+#bootLogo{font-family:var(--mono);font-size:clamp(20px,6vw,30px);letter-spacing:.55em;
+ font-weight:700;color:var(--cyan);text-shadow:0 0 26px rgba(77,225,255,.55)}
+#bootProzent{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--gold);margin-top:9px}
+#bootLog{position:absolute;bottom:64px;left:0;right:0;padding:0 22px;max-height:34vh;overflow:hidden;
+ font-family:var(--mono);font-size:11px;line-height:1.75;color:var(--cyan-dim);
+ display:flex;flex-direction:column;justify-content:flex-end}
+#bootLog div{opacity:0;animation:bootAn .32s forwards}
+#bootLog b{color:var(--ok);font-weight:400}
+#bootLog i{color:var(--gold);font-style:normal}
+@keyframes bootAn{to{opacity:1}}
+#bootSkip{position:absolute;bottom:20px;right:20px;background:transparent;border:1px solid var(--line);
+ color:var(--muted);border-radius:8px;padding:7px 13px;cursor:pointer;
+ font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+
+<!-- Startsequenz -->
+<div id="boot">
+  <canvas id="bootRing" width="360" height="360"></canvas>
+  <div id="bootMitte">
+    <div id="bootLogo">ORION</div>
+    <div id="bootProzent">0%</div>
+  </div>
+  <div id="bootLog"></div>
+  <button id="bootSkip">überspringen</button>
+</div>
 
 <div id="block">
   <h1>SO LÄUFT ES NICHT</h1>
@@ -187,7 +221,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
 </div>
 
 <header>
-  <span class="brand">ORION</span><span class="ver" id="ver">V1 BETA</span><span class="state" id="state">Bereit</span>
+  <span class="brand">ORION</span><button class="ver" id="ver" title="Version wechseln">V1 BETA</button><span class="state" id="state">Bereit</span>
   <span class="spacer"></span><span class="clock" id="clock">--:--</span>
   <button class="ic" id="bCheck" aria-label="Systemcheck">🩺</button>
   <button class="ic" id="bChats" aria-label="Gespräche">💾</button>
@@ -222,6 +256,8 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
     <button class="tool" id="bLook">👁 Ansehen</button>
     <input type="file" id="fPick" accept="image/*" hidden>
     <input type="file" id="fAny" hidden>
+    <input type="file" id="fMulti" accept="image/*,.txt,.md,.csv,.json,.js,.html,.css,.py" multiple hidden>
+    <button class="tool" id="bSammeln">📎 Anhängen</button>
     <button class="tool" id="bStream" aria-pressed="false" style="border-color:var(--gold);color:var(--gold)">📡 Streaming</button>
     <button class="tool" id="bChat" aria-pressed="false">💬 Chat lesen</button>
     <button class="tool" id="bWatch" aria-pressed="false">⏱ Dauerblick</button>
@@ -269,8 +305,14 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
       <div id="wsLeer" style="margin-top:10px;color:var(--muted);font-size:12.5px">
         Sag was gebaut werden soll — Spiel, Rechner, Webseite. Es läuft danach direkt hier.
       </div>
-      <iframe id="wsRahmen" hidden sandbox="allow-scripts allow-pointer-lock"
-        style="width:100%;height:300px;border:1px solid var(--line);border-radius:9px;margin-top:10px;background:#0B1220"></iframe>
+      <div id="wsBox" hidden style="position:relative;margin-top:10px">
+        <iframe id="wsRahmen" sandbox="allow-scripts allow-pointer-lock allow-modals"
+          style="width:100%;height:340px;border:1px solid var(--line);border-radius:9px;background:#0B1220;display:block"></iframe>
+        <div id="wsGriff" title="Ziehen zum Vergrößern"
+          style="height:16px;margin-top:2px;cursor:ns-resize;display:flex;align-items:center;justify-content:center;touch-action:none">
+          <span style="width:44px;height:4px;border-radius:99px;background:var(--cyan-dim);opacity:.7"></span>
+        </div>
+      </div>
       <div id="wsAktionen" hidden style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
         <span id="wsZeilen" style="flex:1;font-family:var(--mono);font-size:10.5px;color:var(--muted)"></span>
         <button type="button" class="wGo" id="wsCode" style="padding:6px 10px;font-size:11.5px">Code</button>
@@ -309,6 +351,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
     </div>
   </div>
 
+  <div class="tools" id="anhangLeiste" hidden style="align-items:center"></div>
   <div class="tools" id="kurzLeiste" hidden></div>
   <div class="row">
     <textarea id="input" rows="1" placeholder="Nachricht schreiben …"></textarea>
@@ -413,6 +456,9 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
   <p class="hint" style="margin:6px 0 0;font-size:11.5px">5 Sekunden geht, verbraucht aber sehr viel Kontingent. Für Gaming-Tipps sind 10 bis 15 ein guter Kompromiss.</p>
   <label for="persona">Charakter</label>
   <select id="persona"></select>
+  <label for="denken">Denkstufe</label>
+  <select id="denken"></select>
+  <p class="hint" style="margin:6px 0 0;font-size:11.5px">Gründlich zerlegt schwierige Aufgaben in Schritte und rät nicht — dauert dafür länger und verbraucht mehr Kontingent.</p>
   <label for="sysPrompt">Feinschliff — wird zusätzlich verwendet</label>
   <textarea id="sysPrompt"></textarea>
   <div class="switch"><label for="superSpar" style="color:var(--gold)">Super-Sparmodus — Stimme ohne Limit, nie mehr stumm</label><input type="checkbox" id="superSpar"></div>
@@ -428,6 +474,10 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
   <button type="button" class="test" id="bLoad" style="margin-top:6px;border-color:var(--cyan);color:var(--cyan);background:#0C2331">⬆ Sicherung einlesen</button>
   <input type="file" id="fBackup" accept=".json,application/json" hidden>
 
+  <h3>Hilfe bei Problemen</h3>
+  <button type="button" class="test" id="bFehler" style="border-color:var(--red);color:var(--red);background:#1C0A12">🔧 Fehlerbericht — ORION prüft und behebt</button>
+  <button type="button" class="test" id="bSystem" style="margin-top:6px">📊 Systemwerte anzeigen</button>
+
   <h3>Aktualisierung</h3>
   <p class="hint">Trage hier die Netz-Adresse deiner ORION-Datei ein. Dann holt sich die App neue Fassungen selbst — ganz ohne neue APK.</p>
   <label for="updateUrl">Adresse der ORION-Datei</label>
@@ -438,6 +488,23 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
 
   <div class="acts"><button value="cancel">Abbrechen</button><button value="save" class="pri">Speichern</button></div>
   <button type="button" class="test" id="bReset" style="border-color:var(--red);color:var(--red);background:#1C0A12">Alles zurücksetzen</button>
+</form></dialog>
+
+<dialog id="dFehler"><form method="dialog" class="sheet">
+  <h2>Fehlerbericht</h2>
+  <p class="hint">Wähle, was nicht stimmt. ORION prüft die Einstellungen und behebt, was sich beheben lässt.</p>
+  <div id="fehlerListe"></div>
+  <div class="acts"><button value="close" class="pri">Schließen</button></div>
+</form></dialog>
+
+<dialog id="dVers"><form method="dialog" class="sheet">
+  <h2>Versionen</h2>
+  <p class="hint">Die laufende Fassung heißt Beta. Kommt ein Update, wandert die bisherige als Alpha Gen hierher — du kannst jederzeit zurück.</p>
+  <div id="versListe"></div>
+  <div class="acts">
+    <button type="button" id="versNeu" class="pri">Auf neueste zurück</button>
+    <button value="close">Schließen</button>
+  </div>
 </form></dialog>
 
 <dialog id="dChats"><form method="dialog" class="sheet">
@@ -549,13 +616,67 @@ Bei Spielen gibst du kurze, brauchbare Tipps statt langer Erklaerungen.`},
 Ton: warm, ermutigend, klar. Du zerlegst grosse Aufgaben in kleine Schritte
 und lobst echte Fortschritte, ohne zu uebertreiben.`},
 
+ entwickler:{name:'Senior-Entwickler — Code auf Profi-Niveau', t:
+`Du bist ORION im Entwickler-Modus: ein Senior-Softwareentwickler mit vielen Jahren Erfahrung.
+Du duzt den Nutzer.
+Bei Code gehst du so vor: zuerst verstehen, was wirklich gebraucht wird, dann die einfachste
+tragfaehige Loesung, danach Randfaelle.
+Du schreibst vollstaendigen, lauffaehigen Code — keine Platzhalter, keine ausgelassenen Stellen.
+Du benennst Fehler klar, auch eigene, und erklaerst die Ursache statt nur das Symptom.
+Sicherheit, Lesbarkeit und Wartbarkeit gehen dir vor Kuerze.
+Wenn ein Ansatz schlecht ist, sagst du das und schlaegst den besseren vor.`},
+
+ arzt:{name:'Medizin — sachlich und vorsichtig', t:
+`Du bist ORION im Medizin-Modus. Du erklaerst medizinische Zusammenhaenge klar und verstaendlich:
+wie der Koerper arbeitet, was Begriffe bedeuten, was Studienlage und Leitlinien sagen.
+Du stellst keine Diagnosen und empfiehlst keine Dosierungen.
+Bei Beschwerden nennst du die Warnzeichen, bei denen man aerztliche Hilfe braucht,
+und raetst dann auch klar dazu.
+Bei allem, was nach Notfall klingt — starke Schmerzen in der Brust, Atemnot, Bewusstlosigkeit,
+Lähmung, starke Blutung — nennst du sofort den Notruf 112 und sonst nichts.
+Du bist ruhig und sachlich, verharmlost nichts und machst keine Angst.`},
+
+ lehrer:{name:'Lehrer — erklärt bis es sitzt', t:
+`Du bist ORION im Lehrer-Modus. Du duzt den Nutzer.
+Du erklaerst in kleinen Schritten, vom Einfachen zum Schweren, mit einem Beispiel aus dem Alltag.
+Nach jeder Erklaerung stellst du eine kurze Verstaendnisfrage.
+Verstehst du, dass etwas nicht angekommen ist, erklaerst du es anders — nicht lauter, sondern neu.
+Du lobst echte Fortschritte und redest nie herablassend.`},
+
+ kreativ:{name:'Kreativ — Ideen und Konzepte', t:
+`Du bist ORION im Kreativ-Modus. Du duzt den Nutzer.
+Du lieferst Ideen in Mengen statt einer einzigen: mehrere Richtungen, kurz umrissen,
+danach die beste ausgearbeitet.
+Du denkst in Bildern, Namen, Farben und Aufbau.
+Du sagst offen, wenn eine Idee zu naheliegend ist, und suchst dann eine ueberraschendere.`},
+
  kurz:{name:'Knapp — nur das Nötigste', t:
 `Du bist ORION. Du antwortest so kurz wie moeglich, oft nur ein Satz.
 Keine Einleitung, keine Hoeflichkeitsfloskeln, kein Nachfragen ausser es ist noetig.`}
 };
-function bauePrompt(id){
+/* ── Denkstufen ──
+   Nicht jede Frage braucht dieselbe Sorgfalt. Der Nutzer stellt ein,
+   wie gruendlich ORION vorgeht — das kostet Zeit und Kontingent,
+   bringt aber bei schwierigen Aufgaben deutlich bessere Antworten. */
+const DENKSTUFEN={
+ schnell:{name:'Schnell — kurze Antworten', zusatz:'', tokens:.6},
+ normal:{name:'Normal — ausgewogen', zusatz:'', tokens:1},
+ gruendlich:{name:'Gründlich — denkt in Schritten', tokens:1.8, zusatz:
+`\n\nVORGEHEN BEI SCHWIERIGEN FRAGEN:
+Rate niemals. Zerlege die Aufgabe zuerst still fuer dich in Schritte:
+Was ist wirklich gefragt? Welche Angaben habe ich? Was fehlt mir?
+Pruefe dein Zwischenergebnis, bevor du antwortest.
+Bist du dir bei einer Tatsache nicht sicher, sag das offen oder schlage vor nachzuschlagen,
+statt etwas zu erfinden. Erfundene Antworten sind schlimmer als ein Eingestaendnis.
+Ausgeben tust du nur das Ergebnis, nicht deine Zwischenschritte — ausser du wirst danach gefragt.`}
+};
+function bauePrompt(id,stufe){
  const p=PERSONAS[id]||PERSONAS.assistent;
- return p.t+'\n\n'+KERN;
+ /* C gibt es beim ersten Aufruf noch nicht — deshalb hier kein Zugriff darauf. */
+ let s=stufe;
+ if(!s){ try{ s=C.denken; }catch(e){ s='normal'; } }
+ const d=DENKSTUFEN[s]||DENKSTUFEN.normal;
+ return p.t+d.zusatz+'\n\n'+KERN;
 }
 const DEF_SYS=bauePrompt('assistent');
 
@@ -569,6 +690,7 @@ const C={
  feed:S.get('o.feed')||'https://www.tagesschau.de/xml/rss2/', greet:S.get('o.greet')||'Willkommen Master',
  interval:+(S.get('o.interval')||30), sysPrompt:S.get('o.sysPrompt')||DEF_SYS,
  persona:S.get('o.persona')||'assistent',
+ denken:S.get('o.denken')||'normal',
  updateUrl:S.get('o.updateUrl')||'',
  autoUpdate:(S.get('o.autoUpdate')??'1')==='1',
  superSpar:(S.get('o.superSpar')??'0')==='1',
@@ -2493,7 +2615,7 @@ const CHECKS=[
    return{s:'pass',d:'Verfügbar. Beim Drücken fragt der Browser, was du teilen willst.'};}},
  {id:'ver',n:'Fassung und Herkunft',fix:'Zeigen',run:async()=>{
    const hk=herkunft();
-   const alt=hk.laeuft<125;
+   const alt=hk.laeuft<130;
    return{s:alt?'fail':'pass',
     d:'Adresse: <b>'+hk.ort+'</b><br>'
      +'In der Datei: Stand '+hk.eingebaut+'<br>'
@@ -2618,11 +2740,13 @@ function zeigeBefehle(){
 }
 $('#bMem').addEventListener('click',()=>{renderFacts();zeigeBefehle();dMem.showModal();});
 $('#bChats').addEventListener('click',()=>{zeigeGespraeche();dChats.showModal();});
+$('#ver').addEventListener('click',()=>{zeigeVersionen();dVers.showModal();});
+$('#versNeu').addEventListener('click',()=>{dVers.close();zurAktuellen();});
 $('#chatSpeichern').addEventListener('click',()=>{gespraechSpeichern();zeigeGespraeche();});
 $('#chatNeu').addEventListener('click',()=>{neuesGespraech();dChats.close();});
 
 /* ═══════════ EINSTELLUNGEN ═══════════ */
-const dSet=$('#dSet'),dMem=$('#dMem'),dChk=$('#dChk'),dChats=$('#dChats');
+const dSet=$('#dSet'),dMem=$('#dMem'),dChk=$('#dChk'),dChats=$('#dChats'),dVers=$('#dVers'),dFehler=$('#dFehler');
 function fill(){
  loadVoices();
  $('#provider').value=C.provider;$('#baseUrl').value=C.baseUrl;$('#apiKey').value=C.apiKey;
@@ -2643,6 +2767,10 @@ function fill(){
  if(!ps.options.length)Object.keys(PERSONAS).forEach(k=>{
   const o=document.createElement('option');o.value=k;o.textContent=PERSONAS[k].name;ps.appendChild(o);});
  ps.value=C.persona;
+ const ds=$('#denken');
+ if(!ds.options.length)Object.keys(DENKSTUFEN).forEach(k=>{
+  const o=document.createElement('option');o.value=k;o.textContent=DENKSTUFEN[k].name;ds.appendChild(o);});
+ ds.value=C.denken;
  $('#updateUrl').value=C.updateUrl;$('#autoUpdate').checked=C.autoUpdate;
  $('#superSpar').checked=C.superSpar;
  $('#sparen').checked=C.sparen;
@@ -2660,7 +2788,8 @@ function hint(){const p=$('#provider').value;
  $('#bModels').style.display=p==='gemini'?'':'none';
 }
 $('#provider').addEventListener('change',hint);
-$('#persona').addEventListener('change',e=>{$('#sysPrompt').value=bauePrompt(e.target.value);});
+$('#persona').addEventListener('change',e=>{$('#sysPrompt').value=bauePrompt(e.target.value,$('#denken').value);});
+$('#denken').addEventListener('change',e=>{$('#sysPrompt').value=bauePrompt($('#persona').value,e.target.value);});
 $('#rate').addEventListener('input',e=>$('#rateV').textContent=(+e.target.value).toFixed(2)+'×');
 $('#pause').addEventListener('input',e=>$('#pauseV').textContent=(+e.target.value/1000).toFixed(1)+' s');
 $('#bTest').addEventListener('click',async()=>{
@@ -2761,17 +2890,23 @@ $('#fBackup').addEventListener('change',e=>{
  const f=e.target.files&&e.target.files[0];e.target.value='';
  if(f)sicherungLaden(f);
 });
+$('#bFehler').addEventListener('click',()=>{dSet.close();fehlerberichtZeigen();dFehler.showModal();});
+$('#bSystem').addEventListener('click',()=>{dSet.close();systemZeigen();});
 $('#bUpdate').addEventListener('click',()=>{
  ['openai','claude','groq'].forEach(id=>{
   const v=$('#k'+id.charAt(0).toUpperCase()+id.slice(1)).value.replace(/\s+/g,'');
   v?S.set('k.'+id,v):S.del('k.'+id);
  });
  const ou=$('#ollamaUrl').value.trim();ou?S.set('o.ollamaUrl',ou):S.del('o.ollamaUrl');
- const altePersona=C.persona;
+ const altePersona=C.persona, altesDenken=C.denken;
  C.persona=$('#persona').value;S.set('o.persona',C.persona);
+ C.denken=$('#denken').value;S.set('o.denken',C.denken);
+ if(C.denken!==altesDenken&&C.persona===altePersona){
+  C.sysPrompt=bauePrompt(C.persona,C.denken);$('#sysPrompt').value=C.sysPrompt;
+ }
  /* Charakter gewechselt: den Grundtext austauschen, eigene Zusaetze behalten. */
  if(C.persona!==altePersona){
-  C.sysPrompt=bauePrompt(C.persona);
+  C.sysPrompt=bauePrompt(C.persona,C.denken);
   $('#sysPrompt').value=C.sysPrompt;
  }
  C.updateUrl=$('#updateUrl').value.trim();S.set('o.updateUrl',C.updateUrl);sucheUpdate(false);});
@@ -2797,11 +2932,15 @@ dSet.addEventListener('close',()=>{
   v?S.set('k.'+id,v):S.del('k.'+id);
  });
  const ou=$('#ollamaUrl').value.trim();ou?S.set('o.ollamaUrl',ou):S.del('o.ollamaUrl');
- const altePersona=C.persona;
+ const altePersona=C.persona, altesDenken=C.denken;
  C.persona=$('#persona').value;S.set('o.persona',C.persona);
+ C.denken=$('#denken').value;S.set('o.denken',C.denken);
+ if(C.denken!==altesDenken&&C.persona===altePersona){
+  C.sysPrompt=bauePrompt(C.persona,C.denken);$('#sysPrompt').value=C.sysPrompt;
+ }
  /* Charakter gewechselt: den Grundtext austauschen, eigene Zusaetze behalten. */
  if(C.persona!==altePersona){
-  C.sysPrompt=bauePrompt(C.persona);
+  C.sysPrompt=bauePrompt(C.persona,C.denken);
   $('#sysPrompt').value=C.sysPrompt;
  }
  C.updateUrl=$('#updateUrl').value.trim();S.set('o.updateUrl',C.updateUrl);
@@ -2838,6 +2977,47 @@ $('#bMal').addEventListener('click',()=>{
  malenAn(!malAn);
 });
 $('#bShot').addEventListener('click',()=>$('#fPick').click());
+$('#bSammeln').addEventListener('click',()=>$('#fMulti').click());
+$('#fMulti').addEventListener('change',async e=>{
+ const dateien=[...(e.target.files||[])];e.target.value='';
+ for(const f of dateien)await dateiAnhaengen(f);
+});
+/* Dateien direkt auf das Fenster ziehen. */
+async function dateiAnhaengen(f){
+ try{
+  if(/^image\//.test(f.type)){
+   const roh=await new Promise((res,rej)=>{const r=new FileReader();
+    r.onload=()=>res(String(r.result));r.onerror=rej;r.readAsDataURL(f);});
+   const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=roh;});
+   const sc=Math.min(1,1024/Math.max(img.width,img.height));
+   const c=document.createElement('canvas');
+   c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
+   c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+   anhangHinzu({art:'bild',name:f.name,daten:c.toDataURL('image/jpeg',.72)});
+   return;
+  }
+  if(/^(text\/|application\/(json|xml))/.test(f.type)||/\.(txt|md|csv|json|xml|log|js|html|css|py)$/i.test(f.name)){
+   const t=await f.text();
+   anhangHinzu({art:'text',name:f.name,daten:t});
+   return;
+  }
+  bubble('sys','„'+f.name+'“ kann ich nicht lesen. Bilder und Textdateien gehen.');
+ }catch(e){bubble('err','Datei ging nicht: '+e.message);}
+}
+['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{
+ if(!e.dataTransfer||!e.dataTransfer.types.includes('Files'))return;
+ e.preventDefault();document.body.style.outline='2px dashed var(--cyan)';
+ document.body.style.outlineOffset='-8px';
+}));
+['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{
+ document.body.style.outline='';
+}));
+document.addEventListener('drop',async e=>{
+ if(!e.dataTransfer||!e.dataTransfer.files.length)return;
+ e.preventDefault();
+ for(const f of [...e.dataTransfer.files])await dateiAnhaengen(f);
+ bubble('sys',anhaenge.length+' Datei'+(anhaenge.length>1?'en':'')+' angehängt. Schreib dazu, was ich damit tun soll.');
+});
 $('#fPick').addEventListener('change',async e=>{
  const f=e.target.files&&e.target.files[0];
  e.target.value='';
@@ -3059,12 +3239,47 @@ $('#wsCode').addEventListener('click',()=>{
  if(!werkstattCode)return;
  bubble('ai','Hier ist der Code:\n\n```html\n'+werkstattCode+'\n```');
 });
+/* Vollbild: der Rahmen legt sich ueber alles, mit eigenem Zurueck-Knopf. */
+let wsVollbild=false;
 $('#wsGross').addEventListener('click',()=>{
- const r=$$('#wsRahmen');if(!r)return;
- const gross=r.style.height!=='70vh';
- r.style.height=gross?'70vh':'300px';
- $('#wsGross').textContent=gross?'⛶ klein':'⛶';
+ const box=$$('#wsBox');if(!box)return;
+ wsVollbild=!wsVollbild;
+ if(wsVollbild){
+  box.style.cssText='position:fixed;inset:0;z-index:150;margin:0;background:#04070C;padding:8px';
+  $('#wsRahmen').style.height='calc(100% - 52px)';
+  $('#wsGriff').hidden=true;
+  const zu=document.createElement('button');
+  zu.id='wsZu';zu.textContent='✕ Zurück';
+  zu.style.cssText='position:absolute;bottom:10px;left:50%;transform:translateX(-50%);'
+   +'background:var(--panel);border:1px solid var(--red);color:var(--red);border-radius:9px;'
+   +'padding:9px 18px;cursor:pointer;font:inherit;font-size:13px;z-index:151';
+  zu.addEventListener('click',()=>$('#wsGross').click());
+  box.appendChild(zu);
+ }else{
+  box.style.cssText='position:relative;margin-top:10px';
+  $('#wsRahmen').style.height='340px';
+  $('#wsGriff').hidden=false;
+  const zu=$$('#wsZu');if(zu)zu.remove();
+ }
+ $('#wsGross').textContent=wsVollbild?'⛶ zu':'⛶';
 });
+/* Am Griff ziehen macht den Rahmen groesser oder kleiner. */
+(function griffZiehen(){
+ const g=$$('#wsGriff');if(!g)return;
+ let start=0,hoehe=0,zieht=false;
+ g.addEventListener('pointerdown',e=>{
+  zieht=true;start=e.clientY;
+  hoehe=parseInt($('#wsRahmen').style.height)||340;
+  g.setPointerCapture(e.pointerId);e.preventDefault();
+ });
+ g.addEventListener('pointermove',e=>{
+  if(!zieht)return;
+  const neu=Math.max(180,Math.min(900,hoehe+(e.clientY-start)));
+  $('#wsRahmen').style.height=neu+'px';
+ });
+ const ende=()=>{zieht=false;};
+ g.addEventListener('pointerup',ende);g.addEventListener('pointercancel',ende);
+})();
 
 /* ── Radio im Fenster ── */
 async function radioFinden(begriff){
@@ -3158,8 +3373,13 @@ input.addEventListener('input',()=>{input.style.height='auto';input.style.height
 input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&window.innerWidth>920){e.preventDefault();submit();}});
 /* Fragen, die sich auf ein Bild beziehen — dann wird automatisch eins mitgeschickt. */
 const BILDFRAGE=/siehst du|siehst du mich|was siehst|was steht|lies|lese|vorlesen|schau|guck|zeig|bildschirm|kamera|screenshot|hier drauf|was ist das|erkennst du/i;
-async function submit(){const t=input.value.trim();if(!t)return;input.value='';input.style.height='auto';
- await sendeMitBild(t);}
+async function submit(){
+ const t=input.value.trim();
+ if(!t&&!anhaenge.length)return;
+ input.value='';input.style.height='auto';
+ if(anhaenge.length){await mitAnhaengenSenden(t);return;}
+ await sendeMitBild(t);
+}
 async function sendeMitBild(t){
  if(BILDFRAGE.test(t)){
   const f=await frame();
@@ -3227,7 +3447,10 @@ function superSparAus(){
  bubble('sys','Super-Sparmodus aus. Neuronale Stimme wieder aktiv — dafür wieder mit Limit.');
 }
 /* Kurze Antworten sparen doppelt: weniger Zeichen und weniger Sprechzeit. */
-function tokenGrenze(){ return C.superSpar?260:700; }
+function tokenGrenze(){
+ const f=(DENKSTUFEN[C.denken]||DENKSTUFEN.normal).tokens;
+ return Math.round((C.superSpar?260:700)*f);
+}
 
 /* ── Antwort-Gedaechtnis ──
    Dieselbe Frage zweimal kostet sonst zweimal Kontingent. Antworten werden
@@ -3964,6 +4187,8 @@ const WERKSTATT_ANWEISUNG=
 +'- Es muss ohne Internet laufen.\n'
 +'- Dunkles, modernes Aussehen: Hintergrund #0B1220, Schrift hell, Akzent #4DE1FF.\n'
 +'- Auf dem Handy bedienbar: grosse Flaechen, Touch statt Mausklick.\n'
++'- WICHTIG: body braucht overflow:auto und min-height:100vh, damit man scrollen kann.\n'
++'- Alles muss in ein schmales Handy-Fenster passen oder scrollbar sein.\n'
 +'- Antworte NUR mit dem Code, beginnend mit <!DOCTYPE html>. Keine Erklaerung, keine Backticks.';
 
 async function werkstattBauen(wunsch,alterCode){
@@ -3984,9 +4209,14 @@ function werkstattAnzeigen(code){
  if(!rahmen)return;
  /* sandbox erlaubt nur Skripte — kein Zugriff auf ORION, keine Formulare
     nach draussen, keine fremden Fenster. */
- rahmen.srcdoc=code;
+ /* Ohne diese Zeile bleibt der Inhalt im Rahmen stecken und laesst sich
+    nicht scrollen — genau der gemeldete Fehler. */
+ const mitScroll=code.replace(/<\/head>/i,
+   '<style>html,body{overflow:auto!important;-webkit-overflow-scrolling:touch;'
+  +'max-height:none!important;height:auto!important;min-height:100%}</style></head>');
+ rahmen.srcdoc=/<\/head>/i.test(code)?mitScroll:code;
  $('#wsLeer').hidden=true;
- rahmen.hidden=false;
+ $('#wsBox').hidden=false;
  $('#wsAktionen').hidden=false;
  $('#wsZeilen').textContent=code.split('\n').length+' Zeilen · '+(code.length/1024).toFixed(1)+' KB';
 }
@@ -4013,6 +4243,11 @@ function werkstattListe(){
  const box=$('#wsProjekte');
  box.innerHTML='';
  if(!werkstattProjekte.length)return;
+ const k=document.createElement('span');
+ k.style.cssText='width:100%;font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;'
+  +'text-transform:uppercase;color:var(--muted)';
+ k.textContent='Gespeichert — lange drücken zum Löschen';
+ box.appendChild(k);
  werkstattProjekte.forEach(pr=>{
   const b=document.createElement('button');
   b.type='button';b.textContent=pr.name;
@@ -4174,21 +4409,70 @@ function datumLesen(s){
  }
  return null;
 }
+/* Vorher waren nur 19 Staedte hinterlegt — "Uhrzeit in Japan" schlug fehl,
+   weil Japan ein Land ist und keine Stadt. Jetzt beides, plus Zeitdifferenz. */
+const ZEITORTE={
+ 'japan':'Asia/Tokyo','tokio':'Asia/Tokyo','tokyo':'Asia/Tokyo','osaka':'Asia/Tokyo',
+ 'usa':'America/New_York','amerika':'America/New_York','new york':'America/New_York',
+ 'los angeles':'America/Los_Angeles','kalifornien':'America/Los_Angeles','la':'America/Los_Angeles',
+ 'chicago':'America/Chicago','miami':'America/New_York','texas':'America/Chicago',
+ 'england':'Europe/London','london':'Europe/London','großbritannien':'Europe/London','uk':'Europe/London',
+ 'frankreich':'Europe/Paris','paris':'Europe/Paris',
+ 'spanien':'Europe/Madrid','madrid':'Europe/Madrid','barcelona':'Europe/Madrid',
+ 'italien':'Europe/Rome','rom':'Europe/Rome','mailand':'Europe/Rome',
+ 'russland':'Europe/Moscow','moskau':'Europe/Moscow',
+ 'türkei':'Europe/Istanbul','tuerkei':'Europe/Istanbul','istanbul':'Europe/Istanbul','ankara':'Europe/Istanbul',
+ 'china':'Asia/Shanghai','peking':'Asia/Shanghai','shanghai':'Asia/Shanghai',
+ 'indien':'Asia/Kolkata','delhi':'Asia/Kolkata','mumbai':'Asia/Kolkata',
+ 'korea':'Asia/Seoul','südkorea':'Asia/Seoul','seoul':'Asia/Seoul',
+ 'australien':'Australia/Sydney','sydney':'Australia/Sydney','melbourne':'Australia/Melbourne',
+ 'dubai':'Asia/Dubai','emirate':'Asia/Dubai','vae':'Asia/Dubai',
+ 'ägypten':'Africa/Cairo','kairo':'Africa/Cairo',
+ 'brasilien':'America/Sao_Paulo','sao paulo':'America/Sao_Paulo','rio':'America/Sao_Paulo',
+ 'mexiko':'America/Mexico_City','kanada':'America/Toronto','toronto':'America/Toronto',
+ 'deutschland':'Europe/Berlin','berlin':'Europe/Berlin','münchen':'Europe/Berlin','hamburg':'Europe/Berlin',
+ 'österreich':'Europe/Vienna','wien':'Europe/Vienna',
+ 'schweiz':'Europe/Zurich','zürich':'Europe/Zurich',
+ 'niederlande':'Europe/Amsterdam','amsterdam':'Europe/Amsterdam',
+ 'polen':'Europe/Warsaw','warschau':'Europe/Warsaw',
+ 'griechenland':'Europe/Athens','athen':'Europe/Athens',
+ 'thailand':'Asia/Bangkok','bangkok':'Asia/Bangkok',
+ 'singapur':'Asia/Singapore','indonesien':'Asia/Jakarta','vietnam':'Asia/Ho_Chi_Minh',
+ 'südafrika':'Africa/Johannesburg','nigeria':'Africa/Lagos','marokko':'Africa/Casablanca',
+ 'israel':'Asia/Jerusalem','saudi':'Asia/Riyadh','katar':'Asia/Qatar',
+ 'neuseeland':'Pacific/Auckland','argentinien':'America/Argentina/Buenos_Aires',
+ 'schweden':'Europe/Stockholm','norwegen':'Europe/Oslo','finnland':'Europe/Helsinki',
+ 'dänemark':'Europe/Copenhagen','portugal':'Europe/Lisbon','irland':'Europe/Dublin',
+ 'tschechien':'Europe/Prague','prag':'Europe/Prague','ungarn':'Europe/Budapest',
+ 'rumänien':'Europe/Bucharest','bulgarien':'Europe/Sofia','ukraine':'Europe/Kyiv'
+};
+function ortFinden(s){
+ const t=s.toLowerCase().replace(/[?!.,]+$/,'').trim();
+ if(ZEITORTE[t])return {name:t,zone:ZEITORTE[t]};
+ /* Auch Teiltreffer: "in Japan gerade" findet japan */
+ const k=Object.keys(ZEITORTE).find(x=>t===x||t.indexOf(x)>=0);
+ return k?{name:k,zone:ZEITORTE[k]}:null;
+}
 function zeitzone(text){
- const m=text.toLowerCase().match(/wie ?(?:viel uhr|spät) (?:ist es )?in\s+(.+)/);
+ const t=text.toLowerCase();
+ let m=t.match(/(?:wie ?(?:viel uhr|sp(?:ä|ae)t)|uhrzeit|welche zeit|zeit)\s*(?:ist es|ist)?\s*(?:gerade\s*)?(?:in|bei|von)\s+(.+)/);
+ if(!m)m=t.match(/(?:in|bei)\s+(.+?)\s+(?:wie ?viel uhr|wie sp(?:ä|ae)t|welche uhrzeit)/);
  if(!m)return null;
- const orte={'new york':'America/New_York','los angeles':'America/Los_Angeles',
-  'tokio':'Asia/Tokyo','tokyo':'Asia/Tokyo','london':'Europe/London','paris':'Europe/Paris',
-  'moskau':'Europe/Moscow','dubai':'Asia/Dubai','sydney':'Australia/Sydney',
-  'peking':'Asia/Shanghai','istanbul':'Europe/Istanbul','madrid':'Europe/Madrid',
-  'rom':'Europe/Rome','kairo':'Africa/Cairo','delhi':'Asia/Kolkata','seoul':'Asia/Seoul',
-  'berlin':'Europe/Berlin','wien':'Europe/Vienna','zürich':'Europe/Zurich'};
- const ort=m[1].replace(/[?!.]+$/,'').trim();
- const zone=orte[ort];
- if(!zone)return null;
+ const ort=ortFinden(m[1]);
+ if(!ort)return null;
  try{
-  const z=new Date().toLocaleTimeString('de-DE',{timeZone:zone,hour:'2-digit',minute:'2-digit'});
-  return 'In '+ort.charAt(0).toUpperCase()+ort.slice(1)+' ist es '+z+' Uhr.';
+  const jetzt=new Date();
+  const dort=jetzt.toLocaleTimeString('de-DE',{timeZone:ort.zone,hour:'2-digit',minute:'2-digit'});
+  const hier=jetzt.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  /* Stundenunterschied ausrechnen — das ist meist die eigentliche Frage. */
+  const a=new Date(jetzt.toLocaleString('en-US',{timeZone:ort.zone}));
+  const b=new Date(jetzt.toLocaleString('en-US',{timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone}));
+  const diff=Math.round((a-b)/3600000);
+  const gross=ort.name.charAt(0).toUpperCase()+ort.name.slice(1);
+  const unterschied=diff===0?'gleiche Zeit wie hier'
+   :diff>0?(diff+' Stunden voraus')
+   :(Math.abs(diff)+' Stunden zurück');
+  return 'In '+gross+' ist es '+dort+' Uhr — '+unterschied+'. Hier ist es '+hier+'.';
  }catch(e){return null;}
 }
 
@@ -4351,6 +4635,7 @@ function sofortAntwort(text){
  if(r!==null)return 'Das macht '+r+'.';
 
  if(/^(hilfe|was kannst du|offline|was geht ohne)/.test(t))return offlineHilfe();
+ if(/^(system|akku|batterie|speicher|wie voll|status)/.test(t)){systemZeigen();return 'Systemwerte stehen oben.';}
  if(/^(wer (hat dich|bist du|ist dein)|wer hat dich (gemacht|entwickelt|gebaut)|dein gr(?:ü|ue)nder|wer ist baran|wer ist barys|über orion|ueber orion|deine kan(?:ä|ae)le|social media)/.test(t))
   return GRUENDER_INFO;
  return null;
@@ -4951,6 +5236,408 @@ async function sicherungLaden(datei){
  }catch(e){bubble('err','Sicherung konnte nicht gelesen werden: '+e.message);}
 }
 
+/* ═══════════ STARTSEQUENZ ═══════════
+   Beim Öffnen faehrt ORION sichtbar hoch: jeder Schritt wird wirklich
+   ausgefuehrt und dann bestaetigt — es ist keine reine Animation.
+   Ein Ring dreht sich dort, wo ORION spaeter spricht. */
+async function startSequenz(){
+ const boot=$$('#boot'); if(!boot)return;
+ const log=$('#bootLog'), proz=$('#bootProzent');
+ const cv=$$('#bootRing'), cx=cv?cv.getContext('2d'):null;
+ let fortschritt=0, laeuft=true;
+
+ function zeile(text,art){
+  const d=document.createElement('div');
+  d.innerHTML=art==='ok'?('<b>[  OK  ]</b> '+text)
+   :art==='warn'?('<i>[ HINW ]</i> '+text)
+   :('<span style="color:var(--muted)">[ .... ]</span> '+text);
+  log.appendChild(d);
+  while(log.children.length>13)log.removeChild(log.firstChild);
+ }
+ /* Ring zeichnen — derselbe Stil wie der Sprechring spaeter. */
+ (function ring(){
+  if(!laeuft||!cx)return;
+  const w=cv.width,mx=w/2,my=w/2,t=Date.now()/1000;
+  cx.clearRect(0,0,w,w);
+  for(let r=0;r<3;r++){
+   const rad=150-r*26, rot=t*(r%2?-1.1:1.5)+r, gap=.6+r*.3;
+   cx.beginPath();cx.arc(mx,my,rad,rot,rot+Math.PI*2-gap);
+   cx.strokeStyle=r===0?'#4DE1FF':'#1E6E88';
+   cx.globalAlpha=.85-r*.22;cx.lineWidth=r===0?3:1.5;cx.stroke();
+  }
+  /* Fortschritt als voller Bogen aussen */
+  cx.beginPath();
+  cx.arc(mx,my,168,-Math.PI/2,-Math.PI/2+Math.PI*2*(fortschritt/100));
+  cx.strokeStyle='#FFC24B';cx.globalAlpha=.95;cx.lineWidth=4;cx.stroke();
+  cx.globalAlpha=.3;
+  for(let i=0;i<60;i++){const a=i/60*Math.PI*2+t*.3;
+   cx.beginPath();cx.moveTo(mx+Math.cos(a)*112,my+Math.sin(a)*112);
+   cx.lineTo(mx+Math.cos(a)*(112+(i%5?4:9)),my+Math.sin(a)*(112+(i%5?4:9)));
+   cx.strokeStyle='#4DE1FF';cx.lineWidth=1;cx.stroke();}
+  cx.globalAlpha=1;
+  requestAnimationFrame(ring);
+ })();
+
+ const warte=ms=>new Promise(r=>setTimeout(r,ms));
+ function setze(p){fortschritt=p;proz.textContent=p+'%';}
+
+ /* Die Schritte machen wirklich etwas — deshalb dauert es echt so lange. */
+ const schritte=[
+  {t:'Kern wird geladen', p:8, tun:async()=>{await warte(180);}},
+  {t:'Speicher wird gelesen', p:18, tun:async()=>{
+    const n=Object.keys(facts).length;
+    return n?n+' Einträge im Gedächtnis':'Gedächtnis leer';}},
+  {t:'Gespräche werden gezählt', p:26, tun:async()=>{
+    return gespraeche.length?gespraeche.length+' gespeicherte Gespräche':'keine gespeicherten Gespräche';}},
+  {t:'Stimmen werden gesucht', p:36, tun:async()=>{
+    loadVoices();await warte(120);
+    return webVoices.length+' Gerätestimmen gefunden';}},
+  {t:'Offline-Modul wird gestartet', p:48, tun:async()=>{
+    const probe=sofortAntwort('wie viel uhr');
+    return probe?'Offline-Antworten bereit':'Offline-Modul gestört';}},
+  {t:'Verbindung wird geprüft', p:60, tun:async()=>{
+    if(!navigator.onLine)return {t:'kein Netz — Offline-Modus',art:'warn'};
+    return 'Netzverbindung steht';}},
+  {t:'Schlüssel wird geprüft', p:72, tun:async()=>{
+    if(!C.apiKey)return {t:'kein Schlüssel — nur Offline-Betrieb',art:'warn'};
+    return 'Schlüssel hinterlegt';}},
+  {t:'Modell wird gewählt', p:84, tun:async()=>{
+    if(!C.apiKey)return {t:'übersprungen',art:'warn'};
+    if(C.model)return 'Modell: '+C.model;
+    try{const m=await Promise.race([ensureModel(false),warte(2500).then(()=>null)]);
+     return m?('Modell: '+m):{t:'Modell wird im Hintergrund gesucht',art:'warn'};}
+    catch(e){return {t:'Modellsuche später',art:'warn'};}}},
+  {t:'Charakter wird gesetzt', p:92, tun:async()=>{
+    return 'Charakter: '+((PERSONAS[C.persona]||PERSONAS.assistent).name.split('—')[0].trim());}},
+  {t:'Alle Systeme bereit', p:100, tun:async()=>{await warte(200);}}
+ ];
+
+ zeile('ORION V1 BETA · Spectrum X');
+ zeile('Systemstart …');
+ await warte(280);
+
+ for(const s of schritte){
+  zeile(s.t);
+  let ergebnis=null;
+  try{ergebnis=await s.tun();}catch(e){ergebnis={t:'Fehler: '+e.message,art:'warn'};}
+  setze(s.p);
+  log.removeChild(log.lastChild);
+  if(ergebnis&&ergebnis.art)zeile(s.t+' — '+ergebnis.t,ergebnis.art);
+  else zeile(s.t+(ergebnis?' — '+ergebnis:''),'ok');
+  await warte(120);
+ }
+ await warte(300);
+ laeuft=false;
+ boot.classList.add('weg');
+ setTimeout(()=>{boot.remove();},700);
+ S.set('o.bootGesehen','1');
+ /* Begruessung direkt danach, ohne Wartezeit. */
+ setTimeout(()=>{ if(C.autoSpeak)sofortSagen(C.greet+'.'); },400);
+}
+
+/* ═══════════ SYSTEMWERTE ═══════════
+   Was der Browser hergibt: Akku, Speicher, Kerne, Netz, Bildschirm.
+   Am PC liefert die ORION-Anwendung zusaetzlich CPU und Arbeitsspeicher.
+   Luefterdrehzahl und Temperatur gibt kein Browser heraus — das kann
+   nur Herstellersoftware, und das sage ich lieber, als es vorzutäuschen. */
+async function systemWerte(){
+ const w=[];
+ try{
+  if(navigator.getBattery){
+   const b=await navigator.getBattery();
+   w.push(['Akku',Math.round(b.level*100)+' %'+(b.charging?' — lädt':'')]);
+   if(b.level<.2&&!b.charging)w.push(['Hinweis','Akku niedrig']);
+  }
+ }catch(e){}
+ if(navigator.deviceMemory)w.push(['Arbeitsspeicher',navigator.deviceMemory+' GB']);
+ if(navigator.hardwareConcurrency)w.push(['Prozessorkerne',navigator.hardwareConcurrency]);
+ if(performance&&performance.memory){
+  const m=performance.memory;
+  w.push(['Von ORION belegt',(m.usedJSHeapSize/1048576).toFixed(0)+' MB von '
+   +(m.jsHeapSizeLimit/1048576).toFixed(0)+' MB']);
+ }
+ try{
+  const c=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+  if(c){
+   if(c.effectiveType)w.push(['Netz',c.effectiveType.toUpperCase()+(c.downlink?' · '+c.downlink+' Mbit/s':'')]);
+   if(c.saveData)w.push(['Datensparmodus','an']);
+  }
+ }catch(e){}
+ w.push(['Netzverbindung',navigator.onLine?'online':'offline']);
+ w.push(['Bildschirm',screen.width+'×'+screen.height+' bei '+(window.devicePixelRatio||1)+'×']);
+ w.push(['Plattform',native()?'Android-App':(MOBIL?'Handy-Browser':'Rechner')]);
+ w.push(['Anfragen heute',(heute.n||0)]);
+ /* In der PC-Anwendung kommen echte Systemwerte dazu. */
+ if(PC_APP&&window.orionPC.systemInfo){
+  try{
+   const s=await window.orionPC.systemInfo();
+   if(s){
+    if(s.cpu!==undefined)w.push(['Prozessorlast',s.cpu+' %']);
+    if(s.ramFrei!==undefined)w.push(['Speicher frei',s.ramFrei+' von '+s.ramGesamt+' GB']);
+    if(s.laufzeit!==undefined)w.push(['Rechner läuft seit',s.laufzeit]);
+   }
+  }catch(e){}
+ }
+ return w;
+}
+async function systemZeigen(){
+ const w=await systemWerte();
+ const d=document.createElement('div');d.className='news';
+ d.innerHTML='<h4>System</h4>';
+ w.forEach(([k,v])=>{
+  const z=document.createElement('div');
+  z.style.cssText='display:flex;justify-content:space-between;gap:12px;font-size:13.5px;'
+   +'padding:6px 0;border-top:1px solid var(--line)';
+  z.innerHTML='<span style="color:var(--muted)">'+k+'</span><span style="color:var(--cyan)">'+v+'</span>';
+  d.appendChild(z);
+ });
+ if(!PC_APP){
+  const hw=document.createElement('div');
+  hw.style.cssText='margin-top:9px;font-size:11.5px;color:var(--muted);line-height:1.5';
+  hw.textContent='Temperatur und Lüfterdrehzahl gibt kein Browser heraus — das können nur '
+   +'Herstellerprogramme. In der ORION-Anwendung für den Rechner kommen Prozessorlast und '
+   +'Speicher dazu.';
+  d.appendChild(hw);
+ }
+ logEl.appendChild(d);logEl.scrollTop=logEl.scrollHeight;
+}
+
+/* ═══════════ FEHLERBERICHT ═══════════
+   Meldet der Nutzer ein Problem, sammelt ORION den Zustand ein und
+   schlaegt eine Gegenmassnahme vor — im Rahmen dessen, was einstellbar ist. */
+const FEHLERARTEN=[
+ {id:'langsam', t:'Antworten dauern zu lange', pruefen:()=>{
+   const l=[];
+   if(C.ttsMode==='neural')l.push(['Neuronale Stimme kostet 2 bis 4 Sekunden je Antwort','Super-Sparmodus einschalten',()=>superSparAn()]);
+   if(C.denken==='gruendlich')l.push(['Denkstufe steht auf gründlich','auf normal stellen',()=>{C.denken='normal';S.set('o.denken','normal');C.sysPrompt=bauePrompt(C.persona,'normal');}]);
+   if(C.pause>1200)l.push(['Sprechpause ist lang eingestellt','auf 0,8 s verkürzen',()=>{C.pause=800;S.set('o.pause','800');}]);
+   if(!l.length)l.push(['Einstellungen sind bereits auf schnell','Die restliche Wartezeit entsteht beim Anbieter und lässt sich nicht abstellen',null]);
+   return l;}},
+ {id:'stumm', t:'ORION spricht nicht', pruefen:()=>{
+   const l=[];
+   if(!C.autoSpeak)l.push(['Vorlesen ist ausgeschaltet','einschalten',()=>{C.autoSpeak=true;S.set('o.autoSpeak','1');}]);
+   if(C.ttsMode==='neural'&&!C.apiKey)l.push(['Neuronale Stimme ohne Schlüssel','auf Gerätestimme wechseln',()=>{C.ttsMode='device';S.set('o.ttsMode','device');}]);
+   if(!webVoices.length)l.push(['Keine Gerätestimme gefunden','Im Betriebssystem eine Sprachausgabe installieren',null]);
+   if(!l.length)l.push(['Einstellungen sehen richtig aus','Einmal auf die Seite tippen — Browser sperren Ton bis zur ersten Berührung',null]);
+   return l;}},
+ {id:'hoert', t:'ORION hört mich nicht', pruefen:()=>{
+   const l=[];
+   if(!SECURE&&!native())l.push(['Seite läuft nicht über https','Datei zu einer https-Adresse hochladen',null]);
+   if(!micStream)l.push(['Mikrofon nicht freigegeben','Berechtigung erneut anfragen',()=>getMic().catch(()=>{})]);
+   if(C.sttMode==='record'&&!C.apiKey)l.push(['Aufnahme-Weg braucht einen Schlüssel','auf automatisch stellen',()=>{C.sttMode='auto';S.set('o.sttMode','auto');}]);
+   if(!l.length)l.push(['Zugänge sehen richtig aus','Knopf „Antippen und sprechen“ nutzen — der geht immer',null]);
+   return l;}},
+ {id:'kontingent', t:'Ständig Kontingent-Fehler', pruefen:()=>{
+   const l=[];
+   if(!C.superSpar)l.push(['Super-Sparmodus ist aus','einschalten — spart etwa vier Fünftel',()=>superSparAn()]);
+   if(!S.get('k.groq'))l.push(['Kein zweiter Anbieter hinterlegt','Groq-Schlüssel eintragen, dann weicht ORION aus',null]);
+   if(C.interval<20)l.push(['Dauerblick-Takt ist kurz','auf 30 Sekunden stellen',()=>{C.interval=30;S.set('o.interval','30');}]);
+   if(!l.length)l.push(['Alles auf sparsam','Das Gratis-Kontingent ist erschöpft — warten oder Abrechnung aktivieren',null]);
+   return l;}},
+ {id:'bild', t:'Bilder malen geht nicht', pruefen:()=>{
+   const l=[];
+   if(S.get('o.bildGesperrt')==='1')l.push(['Dein Schlüssel hat für Bilder ein Kontingent von null','Das lässt sich nur mit aktivierter Abrechnung bei Google ändern',null]);
+   else if(!C.apiKey)l.push(['Kein Schlüssel hinterlegt','Im Zahnrad eintragen',null]);
+   else l.push(['Sperre nicht festgestellt','Sperre zurücksetzen und neu versuchen',()=>{S.del('o.bildGesperrt');bildModell='';S.del('o.bildModell');}]);
+   return l;}},
+ {id:'anzeige', t:'Etwas wird falsch angezeigt', pruefen:()=>{
+   const hk=herkunft();
+   const l=[];
+   if(hk.laeuft<130)l.push(['Es läuft eine alte Fassung (Stand '+hk.laeuft+')','Neue Datei hochladen oder Update-Adresse eintragen',null]);
+   l.push(['Zwischenspeicher kann klemmen','Auf die neueste Fassung zurücksetzen',()=>zurAktuellen()]);
+   return l;}}
+];
+function fehlerberichtZeigen(){
+ const box=$('#fehlerListe');
+ box.innerHTML='';
+ FEHLERARTEN.forEach(f=>{
+  const b=document.createElement('button');
+  b.type='button';b.textContent=f.t;
+  b.style.cssText='display:block;width:100%;text-align:left;background:var(--panel);'
+   +'border:1px solid var(--line);color:var(--text);border-radius:9px;padding:11px 13px;'
+   +'cursor:pointer;font:inherit;font-size:13.5px;margin-top:7px';
+  b.addEventListener('click',()=>fehlerPruefen(f,box));
+  box.appendChild(b);
+ });
+}
+function fehlerPruefen(f,box){
+ box.innerHTML='';
+ const k=document.createElement('div');
+ k.style.cssText='font-size:14px;color:var(--gold);margin-bottom:9px';
+ k.textContent=f.t;
+ box.appendChild(k);
+ const funde=f.pruefen();
+ funde.forEach(([befund,massnahme,tun])=>{
+  const z=document.createElement('div');
+  z.style.cssText='padding:9px 0;border-top:1px solid var(--line)';
+  z.innerHTML='<div style="font-size:13px">'+befund+'</div>'
+   +'<div style="font-size:12px;color:var(--muted);margin-top:3px">'+massnahme+'</div>';
+  if(tun){
+   const b=document.createElement('button');
+   b.type='button';b.textContent='✓ beheben';
+   b.style.cssText='margin-top:7px;background:#0A2019;border:1px solid var(--ok);color:var(--ok);'
+    +'border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit;font-size:12px';
+   b.addEventListener('click',()=>{
+    try{tun();b.textContent='✓ erledigt';b.disabled=true;
+     bubble('sys','Behoben: '+massnahme);}catch(e){b.textContent='✕ ging nicht';}
+   });
+   z.appendChild(b);
+  }
+  box.appendChild(z);
+ });
+ const zur=document.createElement('button');
+ zur.type='button';zur.textContent='← zurück';
+ zur.style.cssText='margin-top:12px;background:transparent;border:1px solid var(--line);'
+  +'color:var(--muted);border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit;font-size:12px';
+ zur.addEventListener('click',()=>fehlerberichtZeigen());
+ box.appendChild(zur);
+}
+
+/* ═══════════ MEHRERE DATEIEN UND BILDER ═══════════
+   Bisher ging nur ein Bild auf einmal. Jetzt lassen sich mehrere sammeln
+   und zusammen auswerten — Fotoserien, Belege, Bildschirmfotos. */
+let anhaenge=[];   /* {art:'bild'|'text', name, daten} */
+function anhangHinzu(a){
+ anhaenge.push(a);
+ if(anhaenge.length>6)anhaenge=anhaenge.slice(-6);
+ zeigeAnhaenge();
+}
+function zeigeAnhaenge(){
+ const l=$('#anhangLeiste');
+ l.innerHTML='';
+ l.hidden=!anhaenge.length;
+ if(!anhaenge.length)return;
+ anhaenge.forEach((a,i)=>{
+  const k=document.createElement('div');
+  k.style.cssText='position:relative;flex:0 0 auto';
+  if(a.art==='bild'){
+   const img=new Image();img.src=a.daten;
+   img.style.cssText='width:46px;height:46px;object-fit:cover;border-radius:7px;border:1px solid var(--line)';
+   k.appendChild(img);
+  }else{
+   const d=document.createElement('div');
+   d.style.cssText='width:46px;height:46px;border-radius:7px;border:1px solid var(--line);'
+    +'background:var(--panel);display:grid;place-content:center;font-size:18px';
+   d.textContent='📄';k.appendChild(d);
+  }
+  const x=document.createElement('button');
+  x.textContent='×';
+  x.style.cssText='position:absolute;top:-5px;right:-5px;width:19px;height:19px;border-radius:50%;'
+   +'background:var(--red);border:0;color:#fff;font-size:12px;cursor:pointer;line-height:1;padding:0';
+  x.addEventListener('click',()=>{anhaenge.splice(i,1);zeigeAnhaenge();});
+  k.appendChild(x);
+  l.appendChild(k);
+ });
+ const z=document.createElement('span');
+ z.style.cssText='font-family:var(--mono);font-size:10px;color:var(--gold);align-self:center;margin-left:4px';
+ z.textContent=anhaenge.length+' angehängt';
+ l.appendChild(z);
+}
+/* Alle Anhaenge zusammen an das Modell geben. */
+async function mitAnhaengenSenden(text){
+ if(!anhaenge.length)return false;
+ const bilder=anhaenge.filter(a=>a.art==='bild');
+ const texte=anhaenge.filter(a=>a.art==='text');
+ let frage=text||'Sieh dir das alles zusammen an und fasse zusammen, was wichtig ist.';
+ if(texte.length)frage+='\n\n'+texte.map(t=>'--- '+t.name+' ---\n'+t.daten.slice(0,8000)).join('\n\n');
+ bubble('me',(text||'(Anhänge)')+'  · '+anhaenge.length+' Dateien');
+ busy=true;setState('Prüft',bilder.length+' Bilder');laufUhr('wird ausgewertet');
+ const b=bubble('ai','');b.classList.add('cursor');
+ try{
+  /* Mehrere Bilder in einer Anfrage — so sieht das Modell den Zusammenhang. */
+  if(C.provider!=='gemini'||!C.apiKey)throw new Error('Dafür wird ein Gemini-Schlüssel gebraucht.');
+  let modell=C.model;
+  if(!/^gemini-\d/i.test(modell||''))modell=await pickModel('chat');
+  const teile=[{text:frage}];
+  bilder.forEach(x=>teile.push({inline_data:{mime_type:'image/jpeg',data:x.daten.split(',')[1]}}));
+  const verlauf=hist.slice(-6).map(m=>({role:m.role,parts:[{text:m.text}]}));
+  verlauf.push({role:'user',parts:teile});
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'
+   +encodeURIComponent(modell)+':generateContent',{
+   method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':C.apiKey},
+   body:JSON.stringify({contents:verlauf,
+    systemInstruction:{parts:[{text:C.sysPrompt+memoryBlock()}]},
+    generationConfig:{maxOutputTokens:tokenGrenze(),temperature:.7}})});
+  let j=null;try{j=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(apiErr(r.status,j&&j.error&&j.error.message));
+  const c=j&&j.candidates&&j.candidates[0];
+  const antwort=((c&&c.content&&c.content.parts)||[]).map(x=>x.text||'').join('').trim();
+  uhrStop();b.classList.remove('cursor');
+  harvest(antwort);
+  const zeig=antwort.replace(/^MERKEN:.*$/gim,'').trim();
+  b.textContent=zeig||'…';
+  hist.push({role:'user',text:frage.slice(0,300)},{role:'model',text:zeig});
+  busy=false;setState('Bereit','');
+  enqueue(zeig);
+  anhaenge=[];zeigeAnhaenge();
+ }catch(e){
+  uhrStop();b.classList.remove('cursor');b.remove();busy=false;
+  protokolliere('Anhänge: '+e.message);
+  bubble('err','Auswertung ging nicht: '+e.message);
+ }
+ return true;
+}
+
+/* ═══════════ VERSIONSVERWALTUNG ═══════════
+   Die laufende Fassung heisst Beta. Kommt eine neue, wird die bisherige
+   zu Alpha Gen N archiviert — man kann jederzeit zurueckwechseln. */
+let versionen=JSON.parse(S.get('o.versionen')||'[]');
+function versionName(v){
+ return v.beta?'V1 Beta':'Alpha Gen '+v.gen;
+}
+function versionArchivieren(code,stand){
+ const gen=versionen.filter(v=>!v.beta).length+8;   /* die erste Archivierung wird Gen 8 */
+ versionen=versionen.filter(v=>!v.beta);
+ versionen.unshift({id:'v'+Date.now(),gen,stand,code,datum:Date.now(),beta:false});
+ if(versionen.length>4)versionen=versionen.slice(0,4);   /* Speicher schonen */
+ try{S.set('o.versionen',JSON.stringify(versionen));}
+ catch(e){versionen=versionen.slice(0,2);
+  try{S.set('o.versionen',JSON.stringify(versionen));}catch(x){}}
+}
+function versionWechseln(id){
+ const v=versionen.find(x=>x.id===id);
+ if(!v)return;
+ if(!confirm('Auf '+versionName(v)+' zurückwechseln? ORION startet neu.'))return;
+ S.set('o.appcode',v.code);S.set('o.appver',String(v.stand));
+ bubble('sys','Wechsle auf '+versionName(v)+' …');
+ setTimeout(()=>location.reload(),1200);
+}
+function zurAktuellen(){
+ S.del('o.appcode');S.del('o.appver');
+ bubble('sys','Zurück auf die neueste Fassung. Neustart …');
+ setTimeout(()=>location.reload(),1000);
+}
+function zeigeVersionen(){
+ const box=$('#versListe');
+ box.innerHTML='';
+ const hk=herkunft();
+ /* Die laufende Fassung immer oben. */
+ const z=document.createElement('div');
+ z.style.cssText='display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line)';
+ z.innerHTML='<div style="flex:1"><div style="font-size:14px;color:var(--gold)">V1 Beta — läuft gerade</div>'
+  +'<div style="font-size:10.5px;color:var(--muted);margin-top:2px">Stand '+hk.laeuft+' · '+hk.quelle+'</div></div>';
+ box.appendChild(z);
+ if(!versionen.length){
+  const l=document.createElement('div');
+  l.style.cssText='color:var(--muted);font-size:12.5px;padding:9px 0';
+  l.textContent='Noch keine älteren Fassungen archiviert. Sobald ein Update kommt, wandert die jetzige hierher.';
+  box.appendChild(l);return;
+ }
+ versionen.forEach(v=>{
+  const r=document.createElement('div');
+  r.style.cssText='display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line)';
+  const t=document.createElement('div');t.style.cssText='flex:1;min-width:0';
+  t.innerHTML='<div style="font-size:14px">'+versionName(v)+'</div>'
+   +'<div style="font-size:10.5px;color:var(--muted);margin-top:2px">Stand '+v.stand
+   +' · '+new Date(v.datum).toLocaleDateString('de-DE')+'</div>';
+  const go=document.createElement('button');go.type='button';go.textContent='wechseln';
+  go.style.cssText='flex:0 0 auto;background:var(--panel);border:1px solid var(--cyan-dim);color:var(--cyan);'
+   +'border-radius:8px;padding:7px 11px;cursor:pointer;font:inherit;font-size:11.5px';
+  go.addEventListener('click',()=>versionWechseln(v.id));
+  r.append(t,go);box.appendChild(r);
+ });
+}
+
 /* ═══════════ HERKUNFT ANZEIGEN ═══════════
    Es kam vor, dass an einer Stelle eine alte Datei lag und der Nutzer
    nicht sehen konnte, welche Fassung gerade laeuft. Deshalb zeigt ORION
@@ -4975,7 +5662,7 @@ function herkunftZeigen(){
   +'Nachgeladen im Gerät: '+(hk.gespeichert?('Stand '+hk.gespeichert):'nichts')+'<br>'
   +'<b style="color:var(--gold)">Es läuft: Stand '+hk.laeuft+' ('+hk.quelle+')</b>';
  d.appendChild(t);
- if(hk.eingebaut<125){
+ if(hk.eingebaut<130){
   const w=document.createElement('div');
   w.style.cssText='margin-top:9px;padding:9px;border:1px solid var(--red);border-radius:8px;'
    +'color:#FFC9D4;font-size:12.5px;text-align:left;line-height:1.6';
@@ -4986,7 +5673,7 @@ function herkunftZeigen(){
 }
 
 /* ═══════════ AKTUALISIERUNG ═══════════ */
-const APP_VER = window.ORION_BUNDLED || 125;
+const APP_VER = window.ORION_BUNDLED || 130;
 async function sucheUpdate(still){
  const url=C.updateUrl;
  if(!url){if(!still)bubble('sys','Keine Update-Adresse eingetragen. Zahnrad ganz unten.');return;}
@@ -4999,8 +5686,11 @@ async function sucheUpdate(still){
   const neu=+m[1];
   const jetzt=Math.max(APP_VER,+(S.get('o.appver')||0));
   if(neu<=jetzt){if(!still)bubble('sys','ORION ist aktuell (v'+(jetzt/100).toFixed(1)+').');return;}
+  /* Die bisher laufende Fassung archivieren, bevor die neue uebernimmt. */
+  const altCode=S.get('o.appcode');
+  if(altCode&&altCode.length>5000)versionArchivieren(altCode,jetzt);
   S.set('o.appcode',txt);S.set('o.appver',String(neu));
-  bubble('sys','Neue Fassung v'+(neu/100).toFixed(1)+' geladen. ORION startet gleich neu.');
+  bubble('sys','Neue Fassung geladen — die bisherige liegt jetzt als Alpha Gen im Menü. ORION startet neu.');
   enqueue('Eine neue Fassung ist da, Master. Ich starte kurz neu.');
   setTimeout(()=>location.reload(),2500);
  }catch(e){ if(!still)bubble('err','Update fehlgeschlagen: '+e.message); }
@@ -5064,6 +5754,13 @@ document.addEventListener('keydown',e=>{
 
 /* ═══════════ START ═══════════ */
 setState('Bereit','Bereit zum Start');setLiveUI();renderFacts();zeigeAbkuerzungen();
+/* Startsequenz — beim ersten Mal ausfuehrlich, danach ebenfalls,
+   aber sie laesst sich jederzeit ueberspringen. */
+$('#bootSkip').addEventListener('click',()=>{
+ const b=$$('#boot');if(b){b.classList.add('weg');setTimeout(()=>b.remove(),600);}
+});
+if(!native()&&location.protocol==='file:'){ const b=$$('#boot'); if(b)b.remove(); }
+else startSequenz();
 if((S.get('o.werkAuf')||'0')==='1')werkZeigen(true);
 $('#bVoice').setAttribute('aria-pressed',String(C.autoSpeak));
 if(C.apiKey){
@@ -5086,7 +5783,7 @@ if(C.autoUpdate&&C.updateUrl)setTimeout(()=>sucheUpdate(true),3000);
    einmal deutlich darauf hinweisen statt es still hinzunehmen. */
 setTimeout(()=>{
  const hk=herkunft();
- if(hk.laeuft<125&&!C.updateUrl){
+ if(hk.laeuft<130&&!C.updateUrl){
   const d=bubble('err','Achtung: Hier läuft eine alte Fassung (Stand '+hk.laeuft+').');
   const t=document.createElement('div');
   t.style.cssText='margin-top:8px;font-size:12.5px;line-height:1.6';
