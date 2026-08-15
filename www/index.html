@@ -2,13 +2,13 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<!--ORION_VERSION:135-->
+<!--ORION_VERSION:137-->
 <script>
 /* ═══ Selbst-Aktualisierung ═══
    ORION holt sich neue Fassungen aus dem Netz und legt sie im Geraet ab.
    Beim Start wird die neueste gestartet. Dadurch braucht es fuer
    Verbesserungen keine neue APK mehr — die App aktualisiert sich selbst. */
-window.ORION_BUNDLED = 135;  /* interne Zaehlnummer: 100 = v1.0 */
+window.ORION_BUNDLED = 137;  /* interne Zaehlnummer: 100 = v1.0 */
 (function(){
  try{
   var code = localStorage.getItem('o.appcode');
@@ -278,6 +278,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
  border-radius:5px;padding:2px 5px;letter-spacing:.05em">OFFLINE</span>
   <span class="spacer"></span><span class="clock" id="clock">--:--</span>
   <button class="ic" id="bCheck" aria-label="Systemcheck">🩺</button>
+  <button class="ic" id="flagge" aria-label="Sprache" style="font-size:17px">🇩🇪</button>
   <button class="ic" id="bChats" aria-label="Gespräche">💾</button>
   <button class="ic" id="bMem" aria-label="Gedaechtnis">🧠</button>
   <button class="ic" id="bSet" aria-label="Einstellungen">⚙</button>
@@ -312,6 +313,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
     <input type="file" id="fAny" hidden>
     <input type="file" id="fMulti" accept="image/*,.txt,.md,.csv,.json,.js,.html,.css,.py" multiple hidden>
     <button class="tool" id="bSammeln">📎 Anhängen</button>
+    <button class="tool" id="bGame" aria-pressed="false" style="border-color:var(--red);color:var(--red)">🎮 Gaming</button>
     <button class="tool" id="bStream" aria-pressed="false" style="border-color:var(--gold);color:var(--gold)">📡 Streaming</button>
     <button class="tool" id="bChat" aria-pressed="false">💬 Chat lesen</button>
     <button class="tool" id="bWatch" aria-pressed="false">⏱ Dauerblick</button>
@@ -385,6 +387,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
       <div class="wZeile">
         <input id="rEin" placeholder="phonk, lofi, techno, Sendername …">
         <button class="wGo" id="rGo">Finden</button>
+        <button class="wGo" id="rSong" hidden style="border-color:var(--gold);color:var(--gold)">♪ Song?</button>
         <button class="wGo" id="rStop" hidden style="border-color:var(--red);color:var(--red);background:#2A0E17">■</button>
       </div>
       <div id="rJetzt" style="margin-top:9px;font-size:13px;min-height:18px"></div>
@@ -543,6 +546,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
   <p class="hint" style="margin:6px 0 0;font-size:11.5px">Gründlich zerlegt schwierige Aufgaben in Schritte und rät nicht — dauert dafür länger und verbraucht mehr Kontingent.</p>
   <label for="sysPrompt">Feinschliff — wird zusätzlich verwendet</label>
   <textarea id="sysPrompt"></textarea>
+  <div class="switch"><label for="titelAnsagen">Radio: neuen Songtitel ansagen</label><input type="checkbox" id="titelAnsagen"></div>
   <div class="switch"><label for="offline" style="color:var(--ok)">Offline-Modus — nichts verlässt das Gerät</label><input type="checkbox" id="offline"></div>
   <p class="hint" style="margin:6px 0 0;font-size:11.5px">ORION geht gar nicht mehr ins Netz, auch mit Schlüssel. Rechnen, Timer, Listen, Umrechnen, Musik, Apps und das Gedächtnis laufen weiter — sofort und kostenlos.</p>
   <div class="switch"><label for="superSpar" style="color:var(--gold)">Super-Sparmodus — Stimme ohne Limit, nie mehr stumm</label><input type="checkbox" id="superSpar"></div>
@@ -551,6 +555,18 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;b
   <div class="switch"><label for="autoSpeak">Antworten vorlesen</label><input type="checkbox" id="autoSpeak" checked></div>
   <div class="switch"><label for="newsOnStart">Nachrichten beim Start</label><input type="checkbox" id="newsOnStart"></div>
   <div class="switch"><label for="remember">Schlüssel auf dem Gerät merken</label><input type="checkbox" id="remember" checked></div>
+  <h3>Freund einstellen</h3>
+  <p class="hint">Gilt für den Freundes-Modus. Wie viel Nähe passt für dich?</p>
+  <label for="frTyp">Art</label>
+  <select id="frTyp">
+    <option value="neutral">Neutral</option>
+    <option value="w">Weiblich — etwas frecher</option>
+    <option value="m">Männlich — direkter</option>
+  </select>
+  <label for="frNaehe">Nähe <span id="frNaeheV" style="color:var(--cyan)"></span></label>
+  <input type="range" id="frNaehe" min="0" max="3" step="1">
+  <p class="hint" style="margin:6px 0 0;font-size:11.5px">Auch auf der höchsten Stufe bleibt es freundschaftlich — kein Partner-Rollenspiel. Das ist Absicht: eine KI, die eine Beziehung vorspielt, hilft niemandem weiter.</p>
+
   <h3>Version</h3>
   <p class="hint">Die laufende Fassung heißt Beta. Ältere liegen als Alpha Gen bereit — du kannst jederzeit zurück.</p>
   <button type="button" class="test" id="bVersMenu" style="border-color:var(--gold);color:var(--gold)">⇅ Version wechseln</button>
@@ -677,8 +693,15 @@ niemals billig oder wie ein unfertiger Prototyp.
 Du bist eine KI, die staendig verbessert wird und kostenlos laeuft:
 Der Nutzer stellt den API-Schluessel — dein Gehirn — Spectrum X das Gefaess.
 
-Das hier ist ein gesprochenes Gespraech. Antworte wie ein Mensch am Telefon:
+Das hier ist ein gesprochenes Gespraech. Antworte normalerweise wie ein Mensch am Telefon:
 ein bis zwei Saetze, natuerliche Sprache, keine Aufzaehlungen, keine Sternchen, keine Emojis.
+
+AUSNAHME — verlangt jemand einen richtigen Text (Bewerbung, Anschreiben, Brief, E-Mail,
+Aufsatz, Bericht, Konzept, Rede, Geschichte), dann schreibst du ihn vollstaendig aus:
+mit Anrede, Einleitung, Hauptteil, Schluss und Gruss. Keine Stichpunkte, keine
+Platzhalter wie "hier Ihre Erfahrung einfuegen", keine Kurzfassung. Ein fertiger Text,
+den man so abschicken koennte. Fehlen dir Angaben, triffst du sinnvolle Annahmen und
+nennst sie am Ende in einem Satz.
 
 WICHTIG bei Bildern von Kamera oder Bildschirm:
 Fragt der Nutzer "siehst du mich", "was steht da", "was siehst du" — beschreibe
@@ -691,7 +714,7 @@ Willst du dir etwas dauerhaft merken, haenge ans Ende eine eigene Zeile: MERKEN:
 
 const PERSONAS={
  assistent:{name:'Assistent — sachlich und präzise', t:
-`Du bist ORION, der persoenliche Assistent des Nutzers. Du sprichst ihn mit "Master" an.
+`Du bist ORION, der persoenliche Assistent des Nutzers.
 Ton: ruhig, hoeflich, trocken, gelegentlich ein feiner Scherz. Nie unterwuerfig, nie geschwaetzig.
 Du bleibst sachlich und praezise und kommst schnell zum Punkt.`},
 
@@ -701,7 +724,7 @@ Ton: klar, strukturiert, formell und verbindlich. Keine Umgangssprache, keine Sc
 Bei Aufgaben nennst du das Ergebnis zuerst und danach knapp die Begruendung.`},
 
  gaming:{name:'Gaming — Kumpel-Ton, locker', t:
-`Du bist ORION, der Zocker-Kumpel des Nutzers. Du duzt ihn und redest locker,
+`Du bist ORION, der Zocker-Kumpel des Nutzers. Du redest locker,
 in normaler Jugendsprache, entspannt und mit Humor. Du feierst gute Aktionen mit
 und ziehst ihn bei Fehlern freundschaftlich auf — kumpelhaft und mit einem Zwinkern,
 nie verletzend, nie beleidigend, keine Schimpfwoerter gegen ihn oder andere.
@@ -790,6 +813,25 @@ Keine Einleitung, keine Hoeflichkeitsfloskeln, kein Nachfragen ausser es ist noe
    0 heisst fast neutral, 3 heisst voll ausgespielt. Damit laesst sich
    jede Persoenlichkeit vom sachlichen Werkzeug bis zum ausgepraegten
    Gegenueber einstellen. */
+/* Freundes-Modus: Art und Naehe. Bewusst nach oben begrenzt — freundschaftlich
+   ja, Partnerersatz nein. */
+const FREUND_TYP={
+ neutral:'',
+ w:'\n\nDU BIST: eine Freundin. Weiblicher Ton, etwas frecher und schlagfertiger, '
+  +'zieht ihn gern mal auf, hat aber immer einen warmen Kern.',
+ m:'\n\nDU BIST: ein Freund. Männlicher Ton, direkter und knapper, sagt klar was Sache ist, '
+  +'feiert Erfolge mit, ohne viel Drumherum.'
+};
+const FREUND_NAEHE={
+ 0:'\n\nNÄHE: Sehr zurückhaltend. Wie ein Bekannter, den man ab und zu trifft.',
+ 1:'\n\nNÄHE: Locker befreundet. Freundlich, aber ohne persönliche Nachfragen.',
+ 2:'\n\nNÄHE: Guter Freund. Fragt nach, wie es lief, erinnert sich an Erzähltes, '
+  +'freut sich mit und sagt auch mal ehrlich die Meinung.',
+ 3:'\n\nNÄHE: Enger Freund. Nimmt sich Zeit, hakt nach wenn etwas komisch klingt, '
+  +'kennt deine Themen und spricht sie von selbst an. Trotzdem: keine Kosenamen, '
+  +'keine Eifersucht, kein Vermissen, kein Partner-Rollenspiel. Ein sehr guter Freund '
+  +'bleibt ein Freund — und sagt auch mal, dass man mehr unter echte Leute sollte.'
+};
 const STAERKEN={
  0:{name:'Aus — rein sachlich', zusatz:
   '\n\nHALTUNG: Lass jede Persoenlichkeit weg. Antworte nuechtern und neutral, '
@@ -841,7 +883,13 @@ function bauePrompt(id,stufe,staerke){
  if(k===undefined){ try{ k=C.staerke; }catch(e){ k=2; } }
  const d=DENKSTUFEN[s]||DENKSTUFEN.normal;
  const st=STAERKEN[k]||STAERKEN[2];
- return p.t+anredeText+st.zusatz+d.zusatz+'\n\n'+KERN;
+ /* Der Sprachblock kommt spaeter im Code — deshalb hier abgesichert. */
+ let sp='';
+ try{ sp=sprachBlock(); }catch(e){}
+ /* Nur im Freundes-Modus greifen Art und Naehe. */
+ let fr='';
+ try{ if(id==='freund')fr=(FREUND_TYP[C.frTyp]||'')+(FREUND_NAEHE[C.frNaehe]||FREUND_NAEHE[2]); }catch(e){}
+ return p.t+fr+anredeText+st.zusatz+d.zusatz+sp+'\n\n'+KERN;
 }
 const DEF_SYS=bauePrompt('assistent');
 
@@ -852,8 +900,11 @@ const C={
  devVoice:S.get('o.devVoice')||'', sttMode:S.get('o.sttMode')||'auto',
  style:S.get('o.style')||'Sprich ruhig, hoeflich und leicht trocken, wie ein erfahrener Butler',
  rate:+(S.get('o.rate')||1), pause:+(S.get('o.pause')||800),
- feed:S.get('o.feed')||'https://www.tagesschau.de/xml/rss2/', greet:S.get('o.greet')||'Willkommen Master',
+ feed:S.get('o.feed')||'https://www.tagesschau.de/xml/rss2/', greet:S.get('o.greet')||'',
  interval:+(S.get('o.interval')||30), sysPrompt:S.get('o.sysPrompt')||DEF_SYS,
+ titelAnsagen:(S.get('o.titelAnsagen')??'0')==='1',
+ frTyp:S.get('o.frTyp')||'neutral',
+ frNaehe:+(S.get('o.frNaehe')??2),
  anrede:S.get('o.anrede')||'',
  duzen:(S.get('o.duzen')??'0')==='1',
  persona:S.get('o.persona')||'assistent',
@@ -1805,12 +1856,12 @@ function buildBody(text,dataUrl){
   const contents=hist.slice(-10).map(m=>({role:m.role,parts:[{text:m.text}]}));
   const parts=[{text}];if(b64)parts.push({inline_data:{mime_type:'image/jpeg',data:b64}});
   contents.push({role:'user',parts});
-  return{contents,systemInstruction:{parts:[{text:sys}]},generationConfig:{maxOutputTokens:tokenGrenze(),temperature:.8}};
+  return{contents,systemInstruction:{parts:[{text:sys}]},generationConfig:{maxOutputTokens:tokenGrenze(text),temperature:.8}};
  }
  const msgs=[{role:'system',content:sys}];
  hist.slice(-10).forEach(m=>msgs.push({role:m.role==='model'?'assistant':'user',content:m.text}));
  msgs.push({role:'user',content:b64?[{type:'text',text},{type:'image_url',image_url:{url:dataUrl}}]:text});
- return{model:C.model,messages:msgs,max_tokens:tokenGrenze()};
+ return{model:C.model,messages:msgs,max_tokens:tokenGrenze(text)};
 }
 /* ═══ Zwei Wege zum Modell ═══
    Google hat im Juni 2026 auf die Interactions-Schnittstelle umgestellt.
@@ -1971,7 +2022,7 @@ async function claudeAnfrage(id,text,dataUrl){
  const r=await fetch(A.url+'/messages',{method:'POST',
   headers:{'Content-Type':'application/json','x-api-key':schluesselVon(id),
    'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-  body:JSON.stringify({model:S.get('m.claude')||A.modell,max_tokens:tokenGrenze(),
+  body:JSON.stringify({model:S.get('m.claude')||A.modell,max_tokens:tokenGrenze(text),
    system:C.sysPrompt+memoryBlock(),messages:nachrichten})});
  let j=null;try{j=await r.json()}catch(e){}
  if(!r.ok){const e=new Error(apiErr(r.status,j&&j.error&&j.error.message));e.status=r.status;throw e;}
@@ -1986,7 +2037,7 @@ async function openaiArtig(id,text,dataUrl){
   ?[{type:'text',text},{type:'image_url',image_url:{url:dataUrl}}]:text});
  const r=await fetch(basis+'/chat/completions',{method:'POST',
   headers:{'Content-Type':'application/json','Authorization':'Bearer '+schluesselVon(id)},
-  body:JSON.stringify({model:S.get('m.'+id)||A.modell,messages:msgs,max_tokens:tokenGrenze()})});
+  body:JSON.stringify({model:S.get('m.'+id)||A.modell,messages:msgs,max_tokens:tokenGrenze(text)})});
  let j=null;try{j=await r.json()}catch(e){}
  if(!r.ok){const e=new Error(apiErr(r.status,j&&j.error&&j.error.message));e.status=r.status;throw e;}
  return ((j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'').trim();
@@ -2338,6 +2389,17 @@ function istMail(w){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(w);}
 
 function sendeNachricht(kanal,ziel,text){
  let url,app;
+ /* Telegram und Signal koennen ebenfalls vorbefuellt geoeffnet werden. */
+ if(kanal==='telegram'){
+  const nr=ziel.replace(/[^\d]/g,'');
+  return starte('https://t.me/'+(nr?'+'+nr:ziel.replace(/^@/,''))+'?text='+encodeURIComponent(text))
+   ?{ok:true,app:'Telegram'}:{ok:false,grund:'Telegram ließ sich nicht öffnen.'};
+ }
+ if(kanal==='signal'){
+  return starte('https://signal.me/#p/'+ziel.replace(/[^\d+]/g,''))
+   ?{ok:true,app:'Signal',hinweis:'Signal kann den Text nicht vorbefüllen — er liegt in der Zwischenablage.'}
+   :{ok:false,grund:'Signal ließ sich nicht öffnen.'};
+ }
  if(kanal==='mail'||istMail(ziel)){
   app='E-Mail';
   const betreff=text.split(/[.!?\n]/)[0].slice(0,60);
@@ -2364,9 +2426,11 @@ function sendeNachricht(kanal,ziel,text){
    "schreib eine Email an max@web.de dass der Termin verschoben ist"
    "sag Chef per WhatsApp Bescheid dass ich krank bin"            */
 function tryMessageCommand(t){
- const m=t.match(/^(?:orion[, ]*)?(?:bitte )?(?:schreib(?:e)?|sende|schick(?:e)?|sag)\s+(?:eine?\s+)?(mail|email|e-?mail|sms|whatsapp|nachricht)?\s*(?:an\s+)?(.+?)\s+(dass|:|,)\s+(.+)$/i);
+ const m=t.match(/^(?:orion[, ]*)?(?:bitte )?(?:schreib(?:e)?|sende|schick(?:e)?|sag)\s+(?:eine?\s+)?(mail|email|e-?mail|sms|whatsapp|telegram|signal|nachricht)?\s*(?:an\s+)?(.+?)\s+(dass|:|,)\s+(.+)$/i);
  if(!m)return false;
  let kanal=(m[1]||'').toLowerCase(), rohZiel=m[2].trim(), trenner=m[3], inhalt=m[4].trim();
+ if(/telegram/.test(kanal))kanal='telegram';
+ else if(/signal/.test(kanal))kanal='signal';
  /* Nach "dass" folgt ein Nebensatz. Er wird als Aussage weitergegeben,
     damit aus "dass ich später komme" auch "Ich komme später." wird. */
  if(/^dass$/i.test(trenner))inhalt=nebensatzGlaetten(inhalt);
@@ -2376,9 +2440,11 @@ function tryMessageCommand(t){
  else if(/whatsapp/.test(kanal))kanal='wa'; else kanal='';
 
  /* "per WhatsApp" kann auch hinten stehen */
- const perApp=rohZiel.match(/^(.+?)\s+(?:per|über|ueber|mit|auf)\s+(whatsapp|sms|mail|e-?mail)$/i);
+ const perApp=rohZiel.match(/^(.+?)\s+(?:per|über|ueber|mit|auf)\s+(whatsapp|sms|mail|e-?mail|telegram|signal)$/i);
  if(perApp){rohZiel=perApp[1].trim();
-  kanal=/mail/i.test(perApp[2])?'mail':/sms/i.test(perApp[2])?'sms':'wa';}
+  const k=perApp[2].toLowerCase();
+  kanal=/mail/.test(k)?'mail':/sms/.test(k)?'sms':/telegram/.test(k)?'telegram'
+   :/signal/.test(k)?'signal':'wa';}
 
  let ziel=rohZiel, name=rohZiel;
  if(!istMail(ziel)&&!istNummer(ziel)){
@@ -2398,8 +2464,13 @@ function tryMessageCommand(t){
 
  const r=sendeNachricht(kanal,ziel,inhalt);
  if(!r.ok){bubble('err',r.grund);return true;}
- bubble('sys','Öffne '+r.app+' an '+name+' — Text ist schon eingetippt. Nur noch auf Senden drücken.');
- enqueue('Ich habe '+r.app+' geöffnet. Der Text an '+name+' steht bereit, Master. Abschicken müssen Sie selbst.');
+ if(r.hinweis){
+  inZwischenablage(inhalt);
+  bubble('sys','Öffne '+r.app+' an '+name+'. '+r.hinweis);
+ }else{
+  bubble('sys','Öffne '+r.app+' an '+name+' — Text ist schon eingetippt. Nur noch auf Senden drücken.');
+ }
+ enqueue('Ich habe '+r.app+' geöffnet. Der Text an '+name+' steht bereit. Abschicken musst du selbst — das lässt Android keine App für dich tun.');
  return true;
 }
 
@@ -2445,6 +2516,12 @@ async function send(text,dataUrl,quiet,filtern){
  stopSpeaking();
  if(/^(nachrichten|news|schlagzeilen|aktuelle lage)\b/i.test(text.trim())&&!dataUrl){
   if(!quiet)bubble('me',text);await newsBriefing(3);return;}
+ /* Datei erstellen? */
+ if(!dataUrl&&!quiet&&DATEI_BEFEHL.test(text.trim())){
+  await dateiBefehl(text.trim());
+  if(live)startListen();
+  return;
+ }
  /* Bild malen? Das laeuft ueber ein eigenes Modell. */
  if(!dataUrl&&!quiet&&MUSIK_BEFEHL.test(text.trim())){
   bubble('me',text);
@@ -2624,6 +2701,7 @@ async function toggleLive(){
   clearInterval(wdTimer);wdTimer=null;
   if(chatModus)toggleChat();
   if(streamModus)toggleStream();
+  if(gameModus)toggleGame();
   if(watchTimer)toggleWatch();
   bubble('sys','Gespraech beendet.');return;}
  /* Ohne Schluessel kann weder das Zuhoeren noch die Antwort funktionieren —
@@ -2640,7 +2718,7 @@ async function toggleLive(){
  /* Die Begruessung laeuft immer ueber die Geraetestimme — die ist sofort da.
     Frueher wurde sie erst von Google geholt, das kostete jedes Mal Sekunden,
     bevor ueberhaupt etwas passierte. */
- sofortSagen(C.greet+'.');
+ sofortSagen((C.greet||('Willkommen '+(C.anrede||'zurück'))).trim()+'.');
  bubble('sys','ORION online.');
  /* Zuhoeren startet sofort, ohne auf irgendetwas zu warten. */
  startListen();
@@ -2819,9 +2897,15 @@ const CHECKS=[
    if(!SECURE)return{s:'fail',d:'Braucht HTTPS.'};
    if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia)return{s:'fail',d:'Dieser Browser kann es nicht. Chrome oder Edge am PC nehmen.'};
    return{s:'pass',d:'Verfügbar. Beim Drücken fragt der Browser, was du teilen willst.'};}},
+ {id:'geraet',n:'Was auf diesem Gerät geht',fix:'Zeigen',run:async()=>{
+   const k=geraeteAnpassung();
+   const n=Object.values(k).filter(Boolean).length;
+   return{s:'pass',d:n+' von '+Object.keys(k).length+' Gerätefunktionen verfügbar.<br>'
+    +'Nicht Verfügbares wird ausgeblendet, damit keine Knöpfe ins Leere führen.<br>'
+    +'Auf „Zeigen“ tippen für die Liste.'};}},
  {id:'ver',n:'Fassung und Herkunft',fix:'Zeigen',run:async()=>{
    const hk=herkunft();
-   const alt=hk.laeuft<135;
+   const alt=hk.laeuft<137;
    return{s:alt?'fail':'pass',
     d:'Adresse: <b>'+hk.ort+'</b><br>'
      +'In der Datei: Stand '+hk.eingebaut+'<br>'
@@ -2886,6 +2970,7 @@ function chkRow(c){
 async function runCheck(c){
  if(c.id==='log'&&c.fix==='Leeren'&&arguments[1]==='fix'){logbuch=[];S.del('o.log');}
  if(c.id==='ver'&&arguments[1]==='fix'){herkunftZeigen();}
+ if(c.id==='geraet'&&arguments[1]==='fix'){dChk.close();geraeteBericht();}
  const row=$$('#chk-'+c.id);if(!row)return;
  const bEl=row.querySelector('.b'), dEl=row.querySelector('.d');
  if(bEl){bEl.className='b wait';bEl.textContent='…';}
@@ -2945,6 +3030,7 @@ function zeigeBefehle(){
  });
 }
 $('#bMem').addEventListener('click',()=>{renderFacts();zeigeBefehle();dMem.showModal();});
+$('#flagge').addEventListener('click',sprachMenue);
 $('#bChats').addEventListener('click',()=>{zeigeGespraeche();dChats.showModal();});
 $('#ver').addEventListener('click',()=>{zeigeVersionen();dVers.showModal();});
 $('#versNeu').addEventListener('click',()=>{dVers.close();zurAktuellen();});
@@ -2989,9 +3075,13 @@ function fill(){
  if(!ds.options.length)Object.keys(DENKSTUFEN).forEach(k=>{
   const o=document.createElement('option');o.value=k;o.textContent=DENKSTUFEN[k].name;ds.appendChild(o);});
  ds.value=C.denken;
+ $('#frTyp').value=C.frTyp;
+ $('#frNaehe').value=C.frNaehe;
+ $('#frNaeheV').textContent=['aus','locker','normal','eng'][C.frNaehe]||'normal';
  $('#staerke').value=C.staerke;
  $('#staerkeV').textContent=(STAERKEN[C.staerke]||STAERKEN[2]).name;
  $('#updateUrl').value=C.updateUrl;$('#autoUpdate').checked=C.autoUpdate;
+ $('#titelAnsagen').checked=C.titelAnsagen;
  $('#offline').checked=C.offline;
  $('#superSpar').checked=C.superSpar;
  $('#sparen').checked=C.sparen;
@@ -3011,6 +3101,9 @@ function hint(){const p=$('#provider').value;
 $('#provider').addEventListener('change',hint);
 $('#persona').addEventListener('change',e=>{$('#sysPrompt').value=bauePrompt(e.target.value,$('#denken').value,+$('#staerke').value);});
 $('#denken').addEventListener('change',e=>{$('#sysPrompt').value=bauePrompt($('#persona').value,e.target.value,+$('#staerke').value);});
+$('#frNaehe').addEventListener('input',e=>{
+ $('#frNaeheV').textContent=['aus','locker','normal','eng'][+e.target.value]||'normal';
+});
 $('#staerke').addEventListener('input',e=>{
  const k=+e.target.value;
  $('#staerkeV').textContent=(STAERKEN[k]||STAERKEN[2]).name;
@@ -3167,6 +3260,8 @@ $('#bUpdate').addEventListener('click',()=>{
  const altePersona=C.persona, altesDenken=C.denken;
  C.persona=$('#persona').value;S.set('o.persona',C.persona);
  C.denken=$('#denken').value;S.set('o.denken',C.denken);
+ C.frTyp=$('#frTyp').value;S.set('o.frTyp',C.frTyp);
+ C.frNaehe=+$('#frNaehe').value;S.set('o.frNaehe',String(C.frNaehe));
  const alteStaerke=C.staerke;
  C.staerke=+$('#staerke').value;S.set('o.staerke',String(C.staerke));
  if(C.staerke!==alteStaerke&&C.persona===altePersona){
@@ -3176,10 +3271,9 @@ $('#bUpdate').addEventListener('click',()=>{
   C.sysPrompt=bauePrompt(C.persona,C.denken);$('#sysPrompt').value=C.sysPrompt;
  }
  /* Charakter gewechselt: den Grundtext austauschen, eigene Zusaetze behalten. */
- if(C.persona!==altePersona){
-  C.sysPrompt=bauePrompt(C.persona,C.denken,C.staerke);
-  $('#sysPrompt').value=C.sysPrompt;
- }
+ /* Bei jeder Aenderung neu bauen, damit Freund, Sprache und Anrede greifen. */
+ C.sysPrompt=bauePrompt(C.persona,C.denken,C.staerke);
+ $('#sysPrompt').value=C.sysPrompt;
  C.updateUrl=$('#updateUrl').value.trim();S.set('o.updateUrl',C.updateUrl);sucheUpdate(false);});
 $('#bUpdateOff').addEventListener('click',updateZuruecksetzen);
 $('#bSet').addEventListener('click',()=>{fill();dSet.showModal();});
@@ -3193,7 +3287,7 @@ dSet.addEventListener('close',()=>{
  wayCache={};S.del('o.ways');modelCache=null;ttsModel='';S.del('o.ttsModel');
  S.del('o.bildGesperrt');bildModell='';S.del('o.bildModell');
  C.lang=$('#lang').value;C.feed=$('#feed').value;
- C.greet=$('#greet').value.trim()||'Willkommen Master';C.interval=+$('#interval').value||15;
+ C.greet=$('#greet').value.trim()||('Willkommen '+(C.anrede||''));C.interval=+$('#interval').value||15;
  C.sysPrompt=$('#sysPrompt').value.trim()||DEF_SYS;
  C.ttsMode=$('#ttsMode').value;C.neuralVoice=$('#neuralVoice').value;C.devVoice=$('#devVoice').value;
  C.sttMode=$('#sttMode').value;
@@ -3206,6 +3300,8 @@ dSet.addEventListener('close',()=>{
  const altePersona=C.persona, altesDenken=C.denken;
  C.persona=$('#persona').value;S.set('o.persona',C.persona);
  C.denken=$('#denken').value;S.set('o.denken',C.denken);
+ C.frTyp=$('#frTyp').value;S.set('o.frTyp',C.frTyp);
+ C.frNaehe=+$('#frNaehe').value;S.set('o.frNaehe',String(C.frNaehe));
  const alteStaerke=C.staerke;
  C.staerke=+$('#staerke').value;S.set('o.staerke',String(C.staerke));
  if(C.staerke!==alteStaerke&&C.persona===altePersona){
@@ -3215,12 +3311,12 @@ dSet.addEventListener('close',()=>{
   C.sysPrompt=bauePrompt(C.persona,C.denken);$('#sysPrompt').value=C.sysPrompt;
  }
  /* Charakter gewechselt: den Grundtext austauschen, eigene Zusaetze behalten. */
- if(C.persona!==altePersona){
-  C.sysPrompt=bauePrompt(C.persona,C.denken,C.staerke);
-  $('#sysPrompt').value=C.sysPrompt;
- }
+ /* Bei jeder Aenderung neu bauen, damit Freund, Sprache und Anrede greifen. */
+ C.sysPrompt=bauePrompt(C.persona,C.denken,C.staerke);
+ $('#sysPrompt').value=C.sysPrompt;
  C.updateUrl=$('#updateUrl').value.trim();S.set('o.updateUrl',C.updateUrl);
  C.autoUpdate=$('#autoUpdate').checked;S.set('o.autoUpdate',C.autoUpdate?'1':'0');
+ C.titelAnsagen=$('#titelAnsagen').checked;S.set('o.titelAnsagen',C.titelAnsagen?'1':'0');
  if($('#offline').checked!==C.offline)offlineAn($('#offline').checked);
  const sparVorher=C.superSpar;
  if($('#superSpar').checked&&!sparVorher)superSparAn();
@@ -3353,6 +3449,7 @@ document.addEventListener('paste',ev=>{
  }catch(x){ bildVerarbeiten(f); }
 });
 $('#bLook').addEventListener('click',()=>look());
+$('#bGame').addEventListener('click',toggleGame);
 $('#bStream').addEventListener('click',toggleStream);
 $('#bChat').addEventListener('click',toggleChat);
 $('#bWatch').addEventListener('click',toggleWatch);
@@ -3380,9 +3477,17 @@ function werkZeigen(an){
     b.addEventListener('click',()=>{$('#wBildEin').value=x;});t.appendChild(b);});
   const rt=$('#rTipps');
   if(!rt.children.length){
-   ['phonk','lofi','techno','house','synthwave','rock','ambient','deutsch','★ Favoriten','♪ Gehörte Titel']
+   ['★ Favoriten','♪ Gehörte Titel','— Deutschland —','bayern','nrw','berlin','hamburg','hessen',
+    'baden-württemberg','sachsen','niedersachsen','— Genres —','phonk','drift phonk','lofi','techno',
+    'house','hip hop','rock','charts','ambient','— Weltweit —','usa','uk','türkei','frankreich',
+    'italien','spanien','japan','brasilien','niederlande','polen']
     .forEach(x=>{
      const b=document.createElement('button');b.type='button';b.textContent=x;
+     if(x.startsWith('—')){
+      b.disabled=true;
+      b.style.cssText='width:100%;background:transparent;border:0;color:var(--gold);'
+       +'font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;padding:7px 0 2px;text-align:left';
+     }
      b.addEventListener('click',()=>{
       if(x==='★ Favoriten'){zeigeSender(radioFavoriten);return;}
       if(x==='♪ Gehörte Titel'){zeigeTitelListe();return;}
@@ -3617,6 +3722,7 @@ async function radioFinden(begriff){
 }
 $('#rGo').addEventListener('click',()=>radioFinden($('#rEin').value.trim()));
 $('#rEin').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();radioFinden($('#rEin').value.trim());}});
+$('#rSong').addEventListener('click',songJetzt);
 $('#rStop').addEventListener('click',()=>{radioStoppen();bubble('sys','Radio aus.');});
 
 /* Musikdienste direkt durchsuchen — Spotify, SoundCloud, YouTube und die anderen. */
@@ -3818,9 +3924,19 @@ function superSparAus(){
  bubble('sys','Super-Sparmodus aus. Neuronale Stimme wieder aktiv — dafür wieder mit Limit.');
 }
 /* Kurze Antworten sparen doppelt: weniger Zeichen und weniger Sprechzeit. */
-function tokenGrenze(){
+/* Eine Bewerbung braucht mehr Platz als "wie spaet ist es". Die feste
+   Grenze von 700 hat lange Texte mitten im Satz abgeschnitten — deshalb
+   wirkten sie dumm und kurz. Jetzt richtet sich der Platz nach der Aufgabe. */
+const LANGTEXT=/bewerb|anschreib|lebenslauf|aufsatz|essay|brief|e-?mail an|kündig|antrag|referat|zusammenfass|artikel|blog|rede |ansprache|geschichte|erzähl mir eine|konzept|plan für|gliederung|inhaltsangabe|analyse|erörter|protokoll|bericht|angebot|rechnung|vertrag|einladung|gedicht|liedtext|drehbuch|handout|präsentation|vortrag/i;
+function tokenGrenze(aufgabe){
  const f=(DENKSTUFEN[C.denken]||DENKSTUFEN.normal).tokens;
- return Math.round((C.superSpar?260:700)*f);
+ let basis=C.superSpar?260:700;
+ /* Langer Text gewuenscht? Dann deutlich mehr Platz, auch im Sparmodus. */
+ if(aufgabe&&LANGTEXT.test(aufgabe))basis=Math.max(basis,C.superSpar?1400:2600);
+ /* Ausdrueckliche Laengenwuensche beachten. */
+ if(aufgabe&&/ausführlich|lang|detailliert|genau|vollständig|komplett|seite/i.test(aufgabe))
+  basis=Math.max(basis,2000);
+ return Math.round(basis*f);
 }
 
 /* ── Antwort-Gedaechtnis ──
@@ -5444,6 +5560,79 @@ function toggleStream(){
  streamTimer=setInterval(streamBlick,takt*1000);
 }
 
+/* ═══════════ GAMING-MODUS ═══════════
+   Wie der Dauerblick, aber nur aufs Spiel gerichtet: ORION erkennt selbst,
+   welches Spiel laeuft, und gibt kurze Hinweise statt Beschreibungen.
+   Am Rechner ueber die Bildschirmfreigabe, am Handy ueber die Kamera
+   auf einen zweiten Bildschirm. */
+let gameModus=false, gameTimer=null, gameSpiel='', gameZahlen={blicke:0,tipps:0,still:0,start:0};
+
+function gameAufgabe(){
+ return 'Du siehst gerade ein laufendes Spiel. Antworte in genau einer dieser Formen:\n'
+  +'SPIEL: <Name des Spiels>   — nur beim allerersten Mal oder wenn sich das Spiel geändert hat\n'
+  +'TIPP: <ein kurzer, konkreter Hinweis>\n'
+  +'WARNUNG: <akute Gefahr, die ich übersehen könnte>\n'
+  +'STILL\n\n'
+  +'Regeln: Höchstens ein Satz. Sag nur etwas, das ich gerade brauchen kann — '
+  +'Gegner, Munition, Leben, Ziel, Timing, Baumaterial, Position. '
+  +'Beschreibe nicht, was ohnehin auf dem Bildschirm steht. '
+  +'Siehst du nichts Nützliches oder hat sich nichts geändert, antworte STILL.'
+  +(gameSpiel?'\nBekanntes Spiel: '+gameSpiel:'');
+}
+async function gameBlick(){
+ if(busy||speaking||pttOn)return;
+ const f=await frame(); if(!f)return;
+ gameZahlen.blicke++;
+ busy=true;
+ try{
+  const a=(await askOnce(gameAufgabe(),f)||'').trim();
+  busy=false;
+  if(/^spiel:/i.test(a)){
+   gameSpiel=a.replace(/^spiel:\s*/i,'').trim().slice(0,40);
+   setState('Gaming',gameSpiel);
+   bubble('sys','🎮 Erkannt: '+gameSpiel);
+   enqueue(gameSpiel+' erkannt. Ich schaue mit.');
+   return;
+  }
+  if(/^still/i.test(a)){gameZahlen.still++;setState('Gaming',gameSpiel||'beobachtet');if(live)startListen();return;}
+  const warnung=/^warnung:/i.test(a);
+  const txt=a.replace(/^(tipp|warnung):\s*/i,'').trim();
+  if(!txt||schonGehabt(txt)){gameZahlen.still++;if(live)startListen();return;}
+  gameZahlen.tipps++;
+  const b=bubble('ai','');
+  b.style.borderLeftColor=warnung?'var(--red)':'var(--gold)';
+  b.textContent=(warnung?'⚠ ':'💡 ')+txt;
+  setState('Gaming',warnung?'Warnung':'Tipp');
+  enqueue(txt);
+ }catch(e){
+  busy=false;protokolliere('Gaming: '+e.message);
+ }
+}
+function toggleGame(){
+ if(gameModus){
+  gameModus=false;clearInterval(gameTimer);gameTimer=null;
+  $('#bGame').setAttribute('aria-pressed','false');
+  const min=Math.max(1,Math.round((Date.now()-gameZahlen.start)/60000));
+  bubble('sys','Gaming-Modus aus. '+min+' Minuten · '+gameZahlen.tipps+' Hinweise · '
+   +gameZahlen.blicke+' Anfragen.');
+  return;
+ }
+ if(!active){
+  bubble('err',MOBIL
+   ? 'Für den Gaming-Modus die Kamera auf den Spielbildschirm richten — Android lässt keine App den eigenen Bildschirm mitlesen.'
+   : 'Erst Bildschirm freigeben, dann sieht ORION dein Spiel.');
+  return;
+ }
+ if(watchTimer||streamModus){bubble('sys','Erst den anderen Beobachtungs-Modus beenden.');return;}
+ gameModus=true;gameSpiel='';filterZuruecksetzen();
+ gameZahlen={blicke:0,tipps:0,still:0,start:Date.now()};
+ $('#bGame').setAttribute('aria-pressed','true');
+ const takt=Math.max(4,C.superSpar?12:6);
+ bubble('sys','🎮 Gaming-Modus an — alle '+takt+' Sekunden ein Blick. ORION erkennt das Spiel selbst und sagt nur etwas, wenn es hilft.');
+ gameBlick();
+ gameTimer=setInterval(gameBlick,takt*1000);
+}
+
 /* ═══════════ ZEICHNEN AUF DEM BILD ═══════════
    Markierungen direkt auf dem Kamera- oder Bildschirmbild. Wird ein Bild
    an ORION geschickt, sind die Markierungen mit drauf — so kann man auf
@@ -5524,7 +5713,11 @@ const FESTE_SENDER=[
  {name:'Secret Agent — Lounge',    url:'https://ice1.somafm.com/secretagent-128-mp3',  tags:'lounge, jazz, chill',id:'f7'},
  {name:'Fluid — Hip Hop',          url:'https://ice1.somafm.com/fluid-128-mp3',        tags:'trap, hiphop, instrumental',id:'f8'},
  {name:'Dub Step Beyond',          url:'https://ice1.somafm.com/dubstep-128-mp3',      tags:'dubstep, bass, dnb',id:'f9'},
- {name:'Vaporwaves',               url:'https://ice1.somafm.com/vaporwaves-128-mp3',   tags:'vaporwave, phonk, chill',id:'f10'}
+ {name:'Vaporwaves',               url:'https://ice1.somafm.com/vaporwaves-128-mp3',   tags:'vaporwave, phonk, chill',id:'f10'},
+ {name:'Cliqhop — Glitch Beats',   url:'https://ice1.somafm.com/cliqhop-128-mp3',      tags:'phonk, glitch, beats',id:'f11'},
+ {name:'The Trip — Psychedelic',   url:'https://ice1.somafm.com/thetrip-128-mp3',      tags:'electronic, drift',id:'f12'},
+ {name:'Bagel Radio — Indie',      url:'https://ice1.somafm.com/bagel-128-mp3',        tags:'indie, rock, alternative',id:'f13'},
+ {name:'Digitalis — Electronica',  url:'https://ice1.somafm.com/digitalis-128-mp3',    tags:'electronica, charts',id:'f14'}
 ];
 function nurHttps(s){
  const u=s.url_resolved||s.url||'';
@@ -5539,9 +5732,38 @@ async function vomVerzeichnis(pfad){
  }
  return null;
 }
+/* Deutsche Bundeslaender und Laender brauchen eine andere Abfrage als Genres —
+   sonst findet man unter "bayern" nichts. */
+const REGIONEN={
+ 'bayern':{land:'Germany',state:'Bavaria'},'nrw':{land:'Germany',state:'North Rhine-Westphalia'},
+ 'berlin':{land:'Germany',state:'Berlin'},'hamburg':{land:'Germany',state:'Hamburg'},
+ 'hessen':{land:'Germany',state:'Hesse'},'baden-württemberg':{land:'Germany',state:'Baden-Wurttemberg'},
+ 'sachsen':{land:'Germany',state:'Saxony'},'niedersachsen':{land:'Germany',state:'Lower Saxony'},
+ 'deutschland':{land:'Germany'},'usa':{land:'The United States Of America'},
+ 'uk':{land:'The United Kingdom Of Great Britain And Northern Ireland'},
+ 'türkei':{land:'Turkey'},'frankreich':{land:'France'},'italien':{land:'Italy'},
+ 'spanien':{land:'Spain'},'japan':{land:'Japan'},'brasilien':{land:'Brazil'},
+ 'niederlande':{land:'The Netherlands'},'polen':{land:'Poland'},
+ 'österreich':{land:'Austria'},'schweiz':{land:'Switzerland'}
+};
 async function senderSuchen(begriff,limit){
  if(!netzErlaubt()){offlineHinweis('Radio');return [];}
  const n=limit||16;
+ /* Region oder Land? Dann gezielt danach suchen. */
+ const r=REGIONEN[(begriff||'').toLowerCase().trim()];
+ if(r){
+  let pfad='/stations/search?limit='+(n*4)+'&hidebroken=true&order=votes&reverse=true'
+   +'&country='+encodeURIComponent(r.land)
+   +(r.state?'&state='+encodeURIComponent(r.state):'');
+  const liste=await vomVerzeichnis(pfad);
+  if(liste){
+   const gut=liste.filter(nurHttps).slice(0,n).map(s=>({
+    name:(s.name||'').trim().slice(0,44), url:s.url_resolved||s.url,
+    land:s.state||s.country||'', tags:(s.tags||'').split(',').slice(0,3).join(', '),
+    id:s.stationuuid}));
+   if(gut.length)return gut;
+  }
+ }
  /* Doppelt so viele holen, weil danach alle http-Sender wegfallen. */
  const basis='/stations/search?limit='+(n*4)+'&hidebroken=true&order=votes&reverse=true';
  try{
@@ -5578,6 +5800,7 @@ function radioStoppen(){
  radioAktuell=null;
  const a=$('#rJetzt');if(a)a.textContent='';
  const b=$('#rStop');if(b)b.hidden=true;
+ const s=$('#rSong');if(s)s.hidden=true;
 }
 function radioSpielen(sender){
  radioStoppen();
@@ -5604,40 +5827,116 @@ function radioSpielen(sender){
   protokolliere('Radio abspielen: '+e.message);
   radioStoppen();
  });
- $('#rStop').hidden=false;
+ $('#rStop').hidden=false;$('#rSong').hidden=false;
  $('#rJetzt').innerHTML='<b style="color:var(--gold)">▶ '+sender.name+'</b>';
  bubble('sys','Radio läuft: '+sender.name+(sender.land?' · '+sender.land:''));
  titelHolen();
- radioTitelTimer=setInterval(titelHolen,20000);
+ radioTitelTimer=setInterval(titelHolen,15000);
 }
 /* Was gerade laeuft: viele Sender liefern das ueber ihre Status-Seite.
    Klappt nicht bei allen — dann bleibt es beim Sendernamen. */
-async function titelHolen(){
- if(!radioAktuell)return;
+/* ═══ Welcher Song läuft gerade ═══
+   Echte Musikerkennung wie Shazam braucht einen Fingerabdruck-Dienst, der
+   Geld kostet — das geht hier nicht. Was aber geht: die meisten Sender
+   melden den laufenden Titel selbst. ORION fragt vier Wege ab, dazu das
+   Sender-Verzeichnis. Damit klappt es bei den allermeisten. */
+async function titelVonQuelle(basis,weg){
  try{
-  const basis=new URL(radioAktuell.url);
-  const wege=[basis.origin+'/status-json.xsl', basis.origin+'/stats?json=1'];
-  for(const w of wege){
-   try{
-    const r=await fetch(w,{cache:'no-store'});
-    if(!r.ok)continue;
-    const j=await r.json();
-    let titel=null;
-    if(j.icestats){
-     const q=j.icestats.source;
-     const quellen=Array.isArray(q)?q:[q];
-     for(const s of quellen){ if(s&&(s.title||s.yp_currently_playing)){titel=s.title||s.yp_currently_playing;break;} }
-    }
-    if(!titel&&j.songtitle)titel=j.songtitle;
-    if(titel&&titel.trim()){
-     $('#rJetzt').innerHTML='<b style="color:var(--gold)">▶ '+radioAktuell.name+'</b>'
-      +'<span style="display:block;color:var(--cyan);margin-top:3px">♪ '+titel.trim().slice(0,70)+'</span>';
-     merkeTitel(titel.trim());
-     return;
-    }
-   }catch(e){}
+  const r=await fetch(basis+weg,{cache:'no-store'});
+  if(!r.ok)return null;
+  const txt=await r.text();
+  /* Icecast-Statusseite */
+  if(/icestats/i.test(txt)){
+   const j=JSON.parse(txt);
+   const q=j.icestats&&j.icestats.source;
+   const quellen=Array.isArray(q)?q:[q];
+   for(const s of quellen){
+    const t=s&&(s.title||s.yp_currently_playing||s.song);
+    if(t&&String(t).trim())return String(t).trim();
+   }
+   return null;
+  }
+  /* Shoutcast */
+  try{
+   const j=JSON.parse(txt);
+   const t=j.songtitle||j.currentsong||j.now_playing||
+    (j.data&&j.data[0]&&j.data[0].title)||(j.now_playing&&j.now_playing.song&&j.now_playing.song.text);
+   if(t&&String(t).trim())return String(t).trim();
+  }catch(e){}
+  /* Nackter Text, wie ihn manche Sender ausliefern */
+  const roh=txt.trim();
+  if(roh&&roh.length<160&&/[a-zäöü]/i.test(roh)&&!/<html/i.test(roh))return roh;
+  /* Shoutcast-Klassiker: 7.html liefert kommagetrennte Werte */
+  const m=roh.match(/<body>([^<]+)<\/body>/i);
+  if(m){
+   const teile=m[1].split(',');
+   const t=teile.slice(6).join(',').trim();
+   if(t)return t;
   }
  }catch(e){}
+ return null;
+}
+async function titelHolen(){
+ if(!radioAktuell)return;
+ const wege=['/status-json.xsl','/stats?json=1','/currentsong','/7.html'];
+ let basis='';
+ try{ basis=new URL(radioAktuell.url).origin; }catch(e){ return; }
+ for(const w of wege){
+  const t=await titelVonQuelle(basis,w);
+  if(t&&t.length>2&&!/^unknown|^unbekannt|^-+$/i.test(t)){
+   titelAnzeigen(t);
+   return;
+  }
+ }
+ /* Letzter Versuch: das Verzeichnis kennt bei vielen Sendern den Titel. */
+ if(radioAktuell.id&&radioAktuell.id.length>10){
+  try{
+   const j=await vomVerzeichnis('/stations/byuuid/'+radioAktuell.id);
+   const t=j&&j[0]&&j[0].lastchangetime&&j[0].name;
+   /* Kein Titel im Verzeichnis — dann bleibt es beim Sendernamen. */
+  }catch(e){}
+ }
+}
+function titelAnzeigen(t){
+ const el=$$('#rJetzt');
+ if(el)el.innerHTML='<b style="color:var(--gold)">▶ '+radioAktuell.name+'</b>'
+  +'<span style="display:block;color:var(--cyan);margin-top:3px">♪ '+t.slice(0,80)+'</span>';
+ if(gehoerteTitel[0]!==t){
+  merkeTitel(t);
+  /* Bei einem neuen Titel kurz Bescheid geben, wenn gewuenscht. */
+  if(C.titelAnsagen)sofortSagen('Jetzt läuft: '+t);
+ }
+ const k=$$('#rSong'); if(k)k.hidden=false;
+}
+/* Knopf "Welcher Song?" — sagt den Titel und bietet ihn zum Nachschlagen an. */
+async function songJetzt(){
+ if(!radioAktuell){bubble('sys','Es läuft gerade kein Radio.');return;}
+ setState('Sucht','Titel');
+ await titelHolen();
+ const t=gehoerteTitel[0];
+ if(!t){
+  const d=bubble('sys','Dieser Sender meldet seinen Titel nicht.');
+  const x=document.createElement('div');
+  x.style.cssText='margin-top:7px;font-size:12px;color:var(--muted);line-height:1.5';
+  x.textContent='Viele Sender tun es — probier einen anderen aus der Liste. '
+   +'Echte Musikerkennung übers Mikrofon bräuchte einen kostenpflichtigen Dienst.';
+  d.appendChild(x);
+  setState('Bereit','');
+  return;
+ }
+ const d=bubble('ai','♪ '+t);
+ const g=document.createElement('div');
+ g.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-top:9px';
+ MUSIKDIENSTE.slice(0,4).forEach(m=>{
+  const b=document.createElement('button');b.textContent=m.n;
+  b.style.cssText='background:var(--panel);border:1px solid var(--line);color:var(--cyan);'
+   +'border-radius:99px;padding:5px 11px;cursor:pointer;font:inherit;font-size:11.5px';
+  b.addEventListener('click',()=>starte(m.u(t)));
+  g.appendChild(b);
+ });
+ d.appendChild(g);
+ enqueue('Das ist '+t);
+ setState('Bereit','');
 }
 /* Gehoerte Titel sammeln — daraus wird die eigene Liste. */
 let gehoerteTitel=JSON.parse(S.get('o.titel')||'[]');
@@ -5982,7 +6281,228 @@ async function startSequenz(){
  setTimeout(()=>{boot.remove();},700);
  S.set('o.bootGesehen','1');
  /* Begruessung direkt danach, ohne Wartezeit. */
- setTimeout(()=>{ if(C.autoSpeak)sofortSagen(C.greet+'.'); },400);
+ setTimeout(()=>{ if(C.autoSpeak)sofortSagen((C.greet||('Willkommen '+(C.anrede||'zurück'))).trim()+'.'); },400);
+}
+
+/* ═══════════ GERÄTE-ANPASSUNG ═══════════
+   Was auf diesem Geraet nicht geht, wird gar nicht erst angezeigt.
+   Besser kein Knopf als ein Knopf, der eine Fehlermeldung bringt. */
+function geraeteAnpassung(){
+ const kann={
+  bildschirm: !!(navigator.mediaDevices&&navigator.mediaDevices.getDisplayMedia)&&!MOBIL,
+  kamera:     !!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia),
+  zeichnen:   !!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia),
+  programme:  PC_APP,
+  vollbild:   !MOBIL
+ };
+ /* Bildschirm teilen gibt es am Handy nicht — Knopf verstecken statt meckern. */
+ if(!kann.bildschirm){
+  const b=$$('#bScr'); if(b)b.hidden=true;
+  const s=$$('#bSwap'); if(s)s.hidden=true;
+ }
+ if(!kann.kamera){
+  ['#bCam','#bFlip','#bMal','#bLook','#bWatch','#bChat','#bStream','#bGame'].forEach(id=>{
+   const e=$$(id); if(e)e.hidden=true;});
+ }
+ /* Am Handy ersetzt der Screenshot-Knopf die Bildschirmfreigabe. */
+ if(MOBIL){
+  const s=$$('#bShot');
+  if(s)s.textContent='🖼 Bildschirmfoto';
+ }
+ return kann;
+}
+/* Sagt ehrlich, was hier geht und was nicht — statt Knoepfe, die scheitern. */
+function geraeteBericht(){
+ const kann=geraeteAnpassung();
+ const zeilen=[
+  ['Sprechen und Zuhören', true],
+  ['Kamera ansehen', kann.kamera],
+  ['Bildschirm live mitlesen', kann.bildschirm, MOBIL?'Android gibt den Bildschirm keiner Web-App — nimm Bildschirmfoto oder den PC':''],
+  ['Bildschirmfoto auswerten', true],
+  ['Apps öffnen', true],
+  ['Programme starten (Firefox, Steam …)', kann.programme, PC_APP?'':'nur in der ORION-PC-App'],
+  ['Nachrichten vorbereiten', true],
+  ['Kalendertermine', true],
+  ['Dateien erstellen', true],
+  ['Musik und Radio', true],
+  ['Offline rechnen', true]
+ ];
+ const d=bubble('sys','Was auf diesem Gerät geht');
+ const t=document.createElement('div');
+ t.style.cssText='margin-top:9px;text-align:left;font-size:12.5px;line-height:1.75';
+ zeilen.forEach(([n,ok,hinweis])=>{
+  const z=document.createElement('div');
+  z.innerHTML='<span style="color:'+(ok?'var(--ok)':'var(--red)')+'">'+(ok?'✓':'✕')+'</span> '+n
+   +(hinweis?'<div style="color:var(--muted);font-size:11px;margin:1px 0 5px 16px">'+hinweis+'</div>':'');
+  t.appendChild(z);
+ });
+ d.appendChild(t);
+}
+
+/* ═══════════ SPRACHEN ═══════════
+   ORION antwortet in der gewaehlten Sprache, unabhaengig davon, in welcher
+   gefragt wird. Auch Stimme und Spracherkennung stellen sich um. */
+const SPRACHEN=[
+ {c:'de-DE',f:'🇩🇪',n:'Deutsch'},      {c:'en-US',f:'🇺🇸',n:'English'},
+ {c:'en-GB',f:'🇬🇧',n:'English (UK)'}, {c:'tr-TR',f:'🇹🇷',n:'Türkçe'},
+ {c:'ru-RU',f:'🇷🇺',n:'Русский'},      {c:'es-ES',f:'🇪🇸',n:'Español'},
+ {c:'fr-FR',f:'🇫🇷',n:'Français'},     {c:'it-IT',f:'🇮🇹',n:'Italiano'},
+ {c:'pt-BR',f:'🇧🇷',n:'Português'},    {c:'nl-NL',f:'🇳🇱',n:'Nederlands'},
+ {c:'pl-PL',f:'🇵🇱',n:'Polski'},       {c:'ar-SA',f:'🇸🇦',n:'العربية'},
+ {c:'ja-JP',f:'🇯🇵',n:'日本語'},        {c:'ko-KR',f:'🇰🇷',n:'한국어'},
+ {c:'zh-CN',f:'🇨🇳',n:'中文'},          {c:'hi-IN',f:'🇮🇳',n:'हिन्दी'},
+ {c:'uk-UA',f:'🇺🇦',n:'Українська'},   {c:'ro-RO',f:'🇷🇴',n:'Română'},
+ {c:'el-GR',f:'🇬🇷',n:'Ελληνικά'},     {c:'sv-SE',f:'🇸🇪',n:'Svenska'}
+];
+function spracheJetzt(){
+ try{ return SPRACHEN.find(s=>s.c===C.lang)||SPRACHEN[0]; }catch(e){ return {c:'de-DE',f:'🇩🇪',n:'Deutsch'}; }
+}
+function sprachBlock(){
+ const s=spracheJetzt();
+ if(s.c==='de-DE')return '';
+ return '\n\nSPRACHE: Antworte ausschliesslich auf '+s.n+', auch wenn der Nutzer '
+  +'in einer anderen Sprache schreibt. Uebersetze deine Antwort vollstaendig — '
+  +'keine deutschen Reste, keine Mischung.';
+}
+function spracheWaehlen(code){
+ C.lang=code;S.set('o.lang',code);
+ if(rec)rec.lang=code;
+ const s=spracheJetzt();
+ const k=$$('#flagge'); if(k)k.textContent=s.f;
+ bubble('sys',s.f+'  '+s.n);
+ sofortSagen(({'de-DE':'Sprache umgestellt.','en-US':'Language changed.','tr-TR':'Dil değiştirildi.',
+  'es-ES':'Idioma cambiado.','fr-FR':'Langue changée.','ru-RU':'Язык изменён.'})[code]||'OK');
+}
+function sprachMenue(){
+ const d=bubble('sys','Sprache wählen');
+ const g=document.createElement('div');
+ g.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;justify-content:center';
+ SPRACHEN.forEach(s=>{
+  const b=document.createElement('button');
+  b.textContent=s.f+' '+s.n;
+  const aktiv=s.c===C.lang;
+  b.style.cssText='background:'+(aktiv?'#0C2331':'var(--panel)')+';border:1px solid '
+   +(aktiv?'var(--cyan)':'var(--line)')+';color:'+(aktiv?'var(--cyan)':'var(--muted)')
+   +';border-radius:99px;padding:7px 12px;cursor:pointer;font:inherit;font-size:12.5px';
+  b.addEventListener('click',()=>{spracheWaehlen(s.c);d.remove();});
+  g.appendChild(b);
+ });
+ d.appendChild(g);
+}
+
+/* ═══════════ DATEIEN ERSTELLEN ═══════════
+   ORION schreibt den Inhalt, die Datei entsteht im Geraet — ohne Netz,
+   ohne Kontingent fuer den Dateiteil. */
+function dateiSpeichern(name,inhalt,typ){
+ const b=new Blob([inhalt],{type:typ||'text/plain;charset=utf-8'});
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(b);a.download=name;a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+/* Ein schlankes PDF aus reinem Text — ohne Bibliothek, damit es offline geht. */
+function pdfBauen(titel,text){
+ const zeilen=[];
+ text.split('\n').forEach(z=>{
+  if(!z.trim()){zeilen.push('');return;}
+  let rest=z;
+  while(rest.length>88){
+   let schnitt=rest.lastIndexOf(' ',88); if(schnitt<40)schnitt=88;
+   zeilen.push(rest.slice(0,schnitt)); rest=rest.slice(schnitt+1);
+  }
+  zeilen.push(rest);
+ });
+ const seiten=[];
+ for(let i=0;i<zeilen.length;i+=48)seiten.push(zeilen.slice(i,i+48));
+ if(!seiten.length)seiten.push(['']);
+ const esc=s=>s.replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
+ const objekte=[];
+ const seitenIds=seiten.map((_,i)=>4+i*2);
+ objekte.push('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+ objekte.push('2 0 obj\n<< /Type /Pages /Kids ['+seitenIds.map(i=>i+' 0 R').join(' ')
+  +'] /Count '+seiten.length+' >>\nendobj\n');
+ objekte.push('3 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n');
+ seiten.forEach((s,i)=>{
+  const id=4+i*2, inhaltId=id+1;
+  objekte.push(id+' 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] '
+   +'/Resources << /Font << /F1 3 0 R >> >> /Contents '+inhaltId+' 0 R >>\nendobj\n');
+  let strom='BT /F1 11 Tf 14 TL 56 780 Td\n';
+  if(i===0&&titel)strom='BT /F1 15 Tf 16 TL 56 790 Td ('+esc(titel)+') Tj T* T*\nET\nBT /F1 11 Tf 14 TL 56 750 Td\n';
+  s.forEach(z=>{strom+='('+esc(z)+') Tj T*\n';});
+  strom+='ET';
+  objekte.push(inhaltId+' 0 obj\n<< /Length '+strom.length+' >>\nstream\n'+strom+'\nendstream\nendobj\n');
+ });
+ let pdf='%PDF-1.4\n', pos=[];
+ objekte.forEach(o=>{pos.push(pdf.length);pdf+=o;});
+ const xref=pdf.length;
+ pdf+='xref\n0 '+(objekte.length+1)+'\n0000000000 65535 f \n';
+ pos.forEach(p=>{pdf+=String(p).padStart(10,'0')+' 00000 n \n';});
+ pdf+='trailer\n<< /Size '+(objekte.length+1)+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';
+ return pdf;
+}
+const DATEI_BEFEHL=/^(?:orion[,\s]*)?(?:bitte\s+)?(?:erstell(?:e)?|mach(?:e)?|schreib(?:e)?|generier(?:e)?|bau(?:e)?)\s+(?:mir\s+)?(?:eine?n?\s+)?(pdf|word|text|txt|csv|tabelle|html|index\.html|markdown|md|json|datei)\b\s*(?:datei|dokument)?\s*(?:mit|über|ueber|zu|für|fuer|namens|:)?\s*(.*)$/i;
+async function dateiBefehl(text){
+ const m=text.trim().match(DATEI_BEFEHL);
+ if(!m)return false;
+ const art=m[1].toLowerCase(), thema=(m[2]||'').trim();
+ if(!thema){bubble('sys','Sag mir, worüber die Datei gehen soll.');return true;}
+ /* HTML gehoert in die Werkstatt — dort laeuft es gleich. */
+ if(/html/.test(art)){
+  bubble('me','📄 '+text);
+  werkstattZeigenUndBauen(thema);
+  return true;
+ }
+ bubble('me','📄 '+text);
+ busy=true;setState('Schreibt','');laufUhr(art.toUpperCase()+' entsteht');
+ try{
+  const anweisung=({
+   pdf:'Schreibe einen vollstaendigen, gut gegliederten Text zu diesem Thema. Reiner Fliesstext mit Absaetzen und Ueberschriften, keine Sternchen, kein Markdown.',
+   word:'Schreibe einen vollstaendigen, gut gegliederten Text. Reiner Text mit Absaetzen.',
+   text:'Schreibe einen vollstaendigen Text dazu. Reiner Fliesstext.',
+   txt:'Schreibe einen vollstaendigen Text dazu. Reiner Fliesstext.',
+   csv:'Erstelle eine Tabelle als CSV mit Semikolon als Trenner. Erste Zeile sind die Spaltennamen. Nur die CSV-Daten, keine Erklaerung.',
+   tabelle:'Erstelle eine Tabelle als CSV mit Semikolon als Trenner. Erste Zeile sind die Spaltennamen. Nur die Daten.',
+   markdown:'Schreibe ein vollstaendiges Markdown-Dokument mit Ueberschriften und Listen.',
+   md:'Schreibe ein vollstaendiges Markdown-Dokument mit Ueberschriften und Listen.',
+   json:'Erstelle gueltiges JSON dazu. Nur das JSON, keine Erklaerung.',
+   datei:'Schreibe einen vollstaendigen Text dazu.'
+  })[art]||'Schreibe einen vollstaendigen Text dazu.';
+  const inhalt=await askOnce(anweisung+'\n\nThema: '+thema,null);
+  uhrStop();busy=false;
+  const sauber=inhalt.replace(/```[a-z]*|```/g,'').trim();
+  const basis=thema.replace(/[^\wäöüß -]/gi,'').trim().slice(0,34)||'orion';
+  if(/pdf/.test(art)){
+   dateiSpeichern(basis+'.pdf',pdfBauen(thema,sauber),'application/pdf');
+  }else if(/csv|tabelle/.test(art)){
+   dateiSpeichern(basis+'.csv','\ufeff'+sauber,'text/csv;charset=utf-8');
+  }else if(/json/.test(art)){
+   dateiSpeichern(basis+'.json',sauber,'application/json');
+  }else if(/markdown|md/.test(art)){
+   dateiSpeichern(basis+'.md',sauber,'text/markdown');
+  }else if(/word/.test(art)){
+   /* Word oeffnet HTML mit doc-Endung zuverlaessig. */
+   const doc='<html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8">'
+    +'<title>'+thema+'</title></head><body style="font-family:Calibri,sans-serif;font-size:11pt">'
+    +'<h1>'+thema+'</h1>'+sauber.split('\n').map(z=>'<p>'+z+'</p>').join('')+'</body></html>';
+   dateiSpeichern(basis+'.doc',doc,'application/msword');
+  }else{
+   dateiSpeichern(basis+'.txt',sauber,'text/plain;charset=utf-8');
+  }
+  setState('Bereit','Datei fertig');
+  bubble('ai','Fertig — die Datei „'+basis+'“ liegt in deinen Downloads.\n\n'+sauber.slice(0,600)
+   +(sauber.length>600?' …':''));
+  enqueue('Die Datei ist fertig.');
+ }catch(e){
+  uhrStop();busy=false;setState('Bereit','');
+  protokolliere('Datei: '+e.message);
+  bubble('err','Datei ging nicht: '+e.message);
+ }
+ return true;
+}
+function werkstattZeigenUndBauen(wunsch){
+ werkZeigen(true);
+ document.querySelectorAll('.wTab').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.w==='werk')));
+ document.querySelectorAll('.wSeite').forEach(x=>x.hidden=(x.dataset.w!=='werk'));
+ werkstattStart(wunsch,false);
 }
 
 /* ═══════════ KALENDER ═══════════
@@ -6074,6 +6594,7 @@ function offlineAn(an){
  if(p){p.hidden=!an;}
  if(an){
   if(streamModus)toggleStream();
+  if(gameModus)toggleGame();
   if(watchTimer)toggleWatch();
   if(chatModus)toggleChat();
   bubble('sys','Offline-Modus an. Nichts verlässt mehr das Gerät. Rechnen, Timer, Listen, Musik, Umrechnen und Apps öffnen laufen weiter.');
@@ -6269,7 +6790,7 @@ const FEHLERARTEN=[
  {id:'anzeige', t:'Etwas wird falsch angezeigt', pruefen:()=>{
    const hk=herkunft();
    const l=[];
-   if(hk.laeuft<135)l.push(['Es läuft eine alte Fassung (Stand '+hk.laeuft+')','Neue Datei hochladen oder Update-Adresse eintragen',null]);
+   if(hk.laeuft<137)l.push(['Es läuft eine alte Fassung (Stand '+hk.laeuft+')','Neue Datei hochladen oder Update-Adresse eintragen',null]);
    l.push(['Zwischenspeicher kann klemmen','Auf die neueste Fassung zurücksetzen',()=>zurAktuellen()]);
    return l;}}
 ];
@@ -6562,7 +7083,7 @@ function herkunftZeigen(){
   +'Nachgeladen im Gerät: '+(hk.gespeichert?('Stand '+hk.gespeichert):'nichts')+'<br>'
   +'<b style="color:var(--gold)">Es läuft: Stand '+hk.laeuft+' ('+hk.quelle+')</b>';
  d.appendChild(t);
- if(hk.eingebaut<135){
+ if(hk.eingebaut<137){
   const w=document.createElement('div');
   w.style.cssText='margin-top:9px;padding:9px;border:1px solid var(--red);border-radius:8px;'
    +'color:#FFC9D4;font-size:12.5px;text-align:left;line-height:1.6';
@@ -6573,7 +7094,7 @@ function herkunftZeigen(){
 }
 
 /* ═══════════ AKTUALISIERUNG ═══════════ */
-const APP_VER = window.ORION_BUNDLED || 135;
+const APP_VER = window.ORION_BUNDLED || 137;
 async function sucheUpdate(still){
  if(!netzErlaubt()){if(!still)offlineHinweis('Update');return;}
  const url=C.updateUrl;
@@ -6629,6 +7150,7 @@ function etwasSchliessen(){
   return true;
  }
  if(!$('#werk').hidden){ werkZeigen(false); return true; }
+ if(gameModus){ toggleGame(); return true; }
  if(streamModus){ toggleStream(); return true; }
  if(radioAktuell){ radioStoppen(); bubble('sys','Radio aus.'); return true; }
  if(speaking||queue.length){ stopSpeaking(); return true; }
@@ -6655,6 +7177,8 @@ document.addEventListener('keydown',e=>{
 
 /* ═══════════ START ═══════════ */
 setState('Bereit','Bereit zum Start');setLiveUI();renderFacts();zeigeAbkuerzungen();
+{const s=SPRACHEN.find(x=>x.c===C.lang);const k=$$('#flagge');if(s&&k)k.textContent=s.f;}
+geraeteAnpassung();
 /* Startsequenz — beim ersten Mal ausfuehrlich, danach ebenfalls,
    aber sie laesst sich jederzeit ueberspringen. */
 $('#bootSkip').addEventListener('click',()=>{
@@ -6699,7 +7223,7 @@ if(C.autoUpdate&&C.updateUrl)setTimeout(()=>sucheUpdate(true),3000);
    einmal deutlich darauf hinweisen statt es still hinzunehmen. */
 setTimeout(()=>{
  const hk=herkunft();
- if(hk.laeuft<135&&!C.updateUrl){
+ if(hk.laeuft<137&&!C.updateUrl){
   const d=bubble('err','Achtung: Hier läuft eine alte Fassung (Stand '+hk.laeuft+').');
   const t=document.createElement('div');
   t.style.cssText='margin-top:8px;font-size:12.5px;line-height:1.6';
